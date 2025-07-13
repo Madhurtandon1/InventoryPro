@@ -15,7 +15,6 @@ import {
 } from "../controllers/product.controller.js";
 import { verifyJWT } from "../middlewares/verifyJWT.middleware.js";
 import { authorizeRoles } from "../middlewares/authorizeRoles.middleware.js";
-import { upload } from "../middlewares/multer.middleware.js";
 
 const router = express.Router();
 
@@ -23,8 +22,8 @@ const router = express.Router();
 router.use(verifyJWT);
 
 // 📦 ADMIN ROUTES
-router.post("/", authorizeRoles("admin"), upload.fields([{ name: "image", maxCount: 1 }]), createProduct);
-router.put("/:id", authorizeRoles("admin"), upload.fields([{ name: "image", maxCount: 1 }]), updateProduct);
+router.post("/", authorizeRoles("admin"),  createProduct);
+router.put("/:id", authorizeRoles("admin"),  updateProduct);
 router.delete("/:productId", authorizeRoles("admin"), deleteProduct);
 router.put("/update-stock/:productId", authorizeRoles("admin"), updateStock);
 

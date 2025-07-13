@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { uploadOnCloudinary, deleteFromCloudinary} from "../utils/cloudinary.js"
 import { Product } from "../models/products.model.js";
 import { getEffectiveUserId } from "../utils/getEffectiveUserId.js";
 
@@ -20,19 +19,6 @@ const existingProduct = await Product.findOne({ sku, createdBy: req.user._id });
   if (existingProduct) {
     throw new ApiError(409, "Product with this SKU already exists");
   }
-
-const imageLocalPath = req.files?.image?.[0]?.path;
-
-if (!imageLocalPath) {
-  throw new ApiError(400, "Product image is required");
-}
-
-const image = await uploadOnCloudinary(imageLocalPath);
-
-if (!image?.url) {
-  throw new ApiError(400, "Image upload failed");
-}
-
   // Create new product
   const product = await Product.create({
     name,
@@ -42,7 +28,7 @@ if (!image?.url) {
     description,
     category,
     supplier,
-    image: image.url ,
+    
     createdBy: req.user._id,
   });
 
@@ -70,23 +56,6 @@ export const updateProduct = asyncHandler(async (req, res) => {
     category,
     supplier
   } = req.body;
-
-  // Optional image replacement
-  if (req.files?.image?.[0]?.path) {
-    // Upload new image
-    const imageUpload = await uploadOnCloudinary(req.files.image[0].path);
-
-    if (!imageUpload?.url) {
-      throw new ApiError(500, "Image upload failed");
-    }
-
-    // Delete old image from Cloudinary if needed
-    if (product.image) {
-      await deleteFromCloudinary(product.image); // works if image is stored as full URL
-    }
-
-    product.image = imageUpload.url;
-  }
 
   // Update only provided fields
   if (name) product.name = name;
@@ -119,9 +88,7 @@ export const deleteProduct = asyncHandler(async (req, res) => {
   if (product.createdBy.toString() !== userId.toString()) {
     throw new ApiError(403, "You are not authorized to delete this product");
   }
-if (product.image) {
-    await deleteFromCloudinary(product.image);
-  }
+
     await product.deleteOne()
   res
   .status(200)

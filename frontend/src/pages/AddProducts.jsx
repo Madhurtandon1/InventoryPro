@@ -12,36 +12,34 @@ const AddProduct = () => {
     price: "",
     quantity: "",
     category: "",
-    supplier: "",
-    image: null,
+    supplier: ""
+    
   });
 
-  const handleChange = (e) => {
-    const { name, value, files } = e.target;
-    setProduct((prev) => ({
-      ...prev,
-      [name]: files ? files[0] : value,
-    }));
-  };
+ const handleChange = (e) => {
+  const { name, value } = e.target;
+  setProduct((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
+};
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!product.name || !product.price || !product.quantity || !product.image) {
+    if (!product.name || !product.price || !product.quantity ) {
       return toast.error("Please fill all required fields.");
     }
 
-    const formData = new FormData();
-    Object.entries(product).forEach(([key, value]) => {
-      formData.append(key, value);
-    });
+   
 
     try {
       const token = localStorage.getItem("token");
-      await axios.post("/products", formData, {
+      await axios.post("/products", product, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
+          "Content-Type": "application/json",
         },
       });
 
@@ -167,20 +165,8 @@ const AddProduct = () => {
           />
         </div>
 
-        {/* Image Upload */}
-        <div>
-          <label className="block text-gray-700 dark:text-gray-300 mb-1">
-            Product Image <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="file"
-            name="image"
-            onChange={handleChange}
-            accept="image/*"
-            className="w-full bg-white dark:bg-gray-800 text-gray-800 dark:text-white border rounded px-4 py-2"
-            required
-          />
-        </div>
+   
+      
 
         {/* Submit Button */}
         <div className="flex justify-end">
