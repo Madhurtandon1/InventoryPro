@@ -1,6 +1,6 @@
 // src/components/DashboardLayout.jsx
 import { Outlet } from "react-router-dom";
-import Header from "./header.jsx";
+import Header from "./Header.jsx"
 import Sidebar from "./Sidebar.jsx";
 import React from "react";
 
