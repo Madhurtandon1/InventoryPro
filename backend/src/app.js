@@ -17,7 +17,7 @@ const app = express();
 // 🍪 Middleware
 import cors from "cors";
 
-import cors from "cors";
+
 
 const allowedOrigins = [
   "http://localhost:5173",
