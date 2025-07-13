@@ -1,7 +1,7 @@
 // src/app.js
 import express from "express";
 import cookieParser from "cookie-parser";
-import cors from "cors";
+
 import morgan from "morgan";
 
 // Route imports
@@ -19,24 +19,27 @@ import cors from "cors";
 
 const allowedOrigins = [
   "http://localhost:5173",
-    "https://inventory-pro-bq8b.vercel.app",
-  "https://inventory-pro-bq8b-git-main-madhurtandons-projects.vercel.app"
+  "https://inventory-pro-bq8b.vercel.app",
+  "https://inventory-pro-bq8b-lvc19brgg-madhurtandons-projects.vercel.app"
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps, curl, etc.)
+      // Allow requests like Postman/curl that don't send an origin
       if (!origin) return callback(null, true);
+
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       } else {
+        console.error("Blocked by CORS:", origin);
         return callback(new Error("Not allowed by CORS"));
       }
     },
     credentials: true,
   })
 );
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
