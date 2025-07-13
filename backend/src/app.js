@@ -20,8 +20,7 @@ import cors from "cors";
 const allowedOrigins = [
   "http://localhost:5173",
   "https://inventory-pro-bq8b.vercel.app",
-  "https://inventory-pro-bq8b-lvc19brgg-madhurtandons-projects.vercel.app",
-  "https://inventory-pro-bq8b-madhurtandons-projects.vercel.app"
+  "/\.vercel\.app$/"
 
 ];
 
