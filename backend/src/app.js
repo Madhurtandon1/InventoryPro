@@ -15,7 +15,28 @@ import dashboardRoutes from "./routes/dashboard.routes.js";
 const app = express();
 
 // 🍪 Middleware
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+import cors from "cors";
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://inventory-pro-bq8b.vercel.app"
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps, curl, etc.)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
