@@ -22,7 +22,8 @@ import cors from "cors";
 const allowedOrigins = [
   "http://localhost:5173",
   "https://inventory-pro-bq8b.vercel.app",
-  "https://inventory-pro-bq8b-orbnrc75d-madhurtandons-projects.vercel.app"
+  "https://inventory-pro-bq8b-orbnrc75d-madhurtandons-projects.vercel.app",
+  "https://inventory-pro-bq8b-owetghp75-madhurtandons-projects.vercel.app" 
 ];
 
 app.use(
