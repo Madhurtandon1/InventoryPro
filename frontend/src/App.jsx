@@ -19,10 +19,10 @@ import SalesReport from "./pages/SalesReport.jsx";
 import StockAlerts from "./pages/StockAlerts.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import Staff from "./pages/Staff.jsx";
-import ForgotPassword from "./pages/forgetPassword.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
 import ForgotAdminPasscode from "./pages/ForgetAdminPasscode.jsx";
 import ResetAdminPasscode from "./pages/ResetAdminPasscode.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
 
 import DashboardLayout from "./components/DashboardLayout.jsx";
 
