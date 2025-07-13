@@ -19,27 +19,21 @@ import cors from "cors";
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://inventory-pro-bq8b.vercel.app",
-  "/\.vercel\.app$/"
-
+  "https://inventory-pro-bq8b-7130zxxs9-madhurtandons-projects.vercel.app",
+  "https://inventory-pro-bq8b.vercel.app", // optional short link
 ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests like Postman/curl that don't send an origin
-      if (!origin) return callback(null, true);
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+}));
 
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      } else {
-        console.error("Blocked by CORS:", origin);
-        return callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-  })
-);
 
 
 app.use(express.json());
