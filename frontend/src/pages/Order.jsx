@@ -3,6 +3,7 @@ import axios from "../utils/axios.js";
 import { Toaster, toast } from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { useLocation, useNavigate } from "react-router-dom";
+import api from "../services/api.js";
 
 const Order = () => {
   const token = localStorage.getItem("token");
@@ -107,7 +108,7 @@ const filteredOrders =  (orders || []).filter((order) => {
 
   const downloadPDF = async () => {
   try {
-    const response = await axios.get("/orders/export/pdf", {
+    const response = await api.get("/orders/export/pdf", {
   responseType: "blob",
   headers: {
     Authorization: `Bearer ${token}`, // ✅ Required

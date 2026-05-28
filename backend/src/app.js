@@ -18,30 +18,51 @@ const app = express();
 import cors from "cors";
 
 const allowedOrigins = [
-  "http://localhost:5173", // for local development
+  "http://localhost:5173",
+  "https://inventory-pro-neon.vercel.app",
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (
-        !origin ||                                          // Allow tools like Postman
-        allowedOrigins.includes(origin) ||                  // Allow localhost
-        origin.endsWith(".vercel.app")                      // ✅ Allow ALL Vercel subdomains
-      ) {
-        callback(null, true);
-      } else {
-        console.log("🔥 CORS blocked: ", origin);
-        callback(new Error("Not allowed by CORS"));
+
+      // Allow Postman/server-to-server
+      if (!origin) {
+        return callback(null, true);
       }
+
+      // Allow localhost + vercel
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith(".vercel.app")
+      ) {
+        return callback(null, true);
+      }
+
+      console.log("🔥 CORS blocked:", origin);
+
+      return callback(
+        new Error("Not allowed by CORS")
+      );
     },
+
     credentials: true,
+
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS",
+    ],
+
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+    ],
   })
 );
-
-
-
-
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
