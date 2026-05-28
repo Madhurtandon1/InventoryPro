@@ -51,7 +51,7 @@ const Products = () => {
         params,
       });
 
-      setProducts(res.data.data);
+      setProducts( res.data.data.products);
     } catch (err) {
       console.error("Failed to fetch products", err);
     }

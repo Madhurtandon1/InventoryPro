@@ -11,7 +11,7 @@ const counterSchema = new mongoose.Schema({
     order: { type: Number, default: 0 },
     customer: { type: Number, default: 0 },
     // ✅ Add more sequences in future if needed
-    // invoice: { type: Number, default: 0 },
+    // : { type: Number, default: 0 },
     // purchase: { type: Number, default: 0 },
   },
 });

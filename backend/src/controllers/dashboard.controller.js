@@ -42,60 +42,218 @@ export const getDashboardSummary = asyncHandler(async (req, res) => {
 
 
 // 📈 Daily sales trend (last 7 days) for logged-in user
+// export const getSalesTrend = asyncHandler(async (req, res) => {
+//   const userId = req.user._id;
+
+//   const trend = await Order.aggregate([
+//     { $match: { createdBy: userId, status: "Completed" } },
+//     {
+//       $group: {
+//         _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+//         totalSales: { $sum: "$totalAmount" },
+//         orderCount: { $sum: 1 }
+//       }
+//     },
+//     { $sort: { _id: 1 } },
+//     { $limit: 7 }
+//   ]);
+
+//   res.status(200).json(new ApiResponse(200, trend, "Sales trend data"));
+// });
 export const getSalesTrend = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
 
-  const trend = await Order.aggregate([
-    { $match: { createdBy: userId, status: "Completed" } },
-    {
-      $group: {
-        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-        totalSales: { $sum: "$totalAmount" },
-        orderCount: { $sum: 1 }
-      }
-    },
-    { $sort: { _id: 1 } },
-    { $limit: 7 }
-  ]);
+    // Owner
+    const ownerId =
+      req.user.role === "staff"
+        ? req.user.createdBy
+        : req.user._id;
 
-  res.status(200).json(new ApiResponse(200, trend, "Sales trend data"));
-});
+    // Last 7 days
+    const last7Days = new Date();
+
+    last7Days.setDate(
+      last7Days.getDate() - 7
+    );
+
+    // Aggregation
+    const trend =
+      await Order.aggregate([
+
+        {
+          $match: {
+            createdBy: ownerId,
+            status: "Completed",
+            createdAt: {
+              $gte: last7Days,
+            },
+          },
+        },
+
+        {
+          $group: {
+            _id: {
+              $dateToString: {
+                format: "%Y-%m-%d",
+                date: "$createdAt",
+              },
+            },
+            totalSales: {
+              $sum: "$totalAmount",
+            },
+            orderCount: {
+              $sum: 1,
+            },
+          },
+        },
+
+        {
+          $sort: {
+            _id: 1,
+          },
+        },
+
+      ]);
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        trend,
+        "Sales trend data"
+      )
+    );
+  });
 
 // 🌟 Top 5 selling products (by quantity) for logged-in user
-export const getTopSellingProducts = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
+// export const getTopSellingProducts = asyncHandler(async (req, res) => {
+//   const userId = req.user._id;
 
-  const topProducts = await Order.aggregate([
-    { $match: { createdBy: userId, status: "Completed" } },
-    { $unwind: "$items" },
-    {
-      $group: {
-        _id: "$items.product",
-        totalSold: { $sum: "$items.quantity" }
-      }
-    },
-    {
-      $lookup: {
-        from: "products",
-        localField: "_id",
-        foreignField: "_id",
-        as: "productDetails"
-      }
-    },
-    { $unwind: "$productDetails" },
-    { $match: { "productDetails.createdBy": userId } },
-    {
-      $project: {
-        _id: 0,
-        productId: "$productDetails._id",
-        name: "$productDetails.name",
-        sku: "$productDetails.sku",
-        totalSold: 1
-      }
-    },
-    { $sort: { totalSold: -1 } },
-    { $limit: 5 }
-  ]);
+//   const topProducts = await Order.aggregate([
+//     { $match: { createdBy: userId, status: "Completed" } },
+//     { $unwind: "$items" },
+//     {
+//       $group: {
+//         _id: "$items.product",
+//         totalSold: { $sum: "$items.quantity" }
+//       }
+//     },
+//     {
+//       $lookup: {
+//         from: "products",
+//         localField: "_id",
+//         foreignField: "_id",
+//         as: "productDetails"
+//       }
+//     },
+//     { $unwind: "$productDetails" },
+//     { $match: { "productDetails.createdBy": userId } },
+//     {
+//       $project: {
+//         _id: 0,
+//         productId: "$productDetails._id",
+//         name: "$productDetails.name",
+//         sku: "$productDetails.sku",
+//         totalSold: 1
+//       }
+//     },
+//     { $sort: { totalSold: -1 } },
+//     { $limit: 5 }
+//   ]);
 
-  res.status(200).json(new ApiResponse(200, topProducts, "Top selling products"));
-});
+//   res.status(200).json(new ApiResponse(200, topProducts, "Top selling products"));
+// });
+export const getTopSellingProducts =  asyncHandler(async (req, res) => {
+
+    // Owner
+    const ownerId =
+      req.user.role === "staff"
+        ? req.user.createdBy
+        : req.user._id;
+
+    // Aggregation
+    const topProducts =
+      await Order.aggregate([
+
+        {
+          $match: {
+            createdBy: ownerId,
+            status: "Completed",
+          },
+        },
+
+        {
+          $unwind: "$items",
+        },
+
+        {
+          $group: {
+            _id: "$items.product",
+            totalSold: {
+              $sum:
+                "$items.quantity",
+            },
+          },
+        },
+
+        {
+          $lookup: {
+            from: "products",
+            localField: "_id",
+            foreignField: "_id",
+            pipeline: [
+              {
+                $project: {
+                  name: 1,
+                  sku: 1,
+                  createdBy: 1,
+                },
+              },
+            ],
+            as: "productDetails",
+          },
+        },
+
+        {
+          $unwind:
+            "$productDetails",
+        },
+
+        {
+          $match: {
+            "productDetails.createdBy":
+              ownerId,
+          },
+        },
+
+        {
+          $project: {
+            _id: 0,
+            productId:
+              "$productDetails._id",
+            name:
+              "$productDetails.name",
+            sku:
+              "$productDetails.sku",
+            totalSold: 1,
+          },
+        },
+
+        {
+          $sort: {
+            totalSold: -1,
+          },
+        },
+
+        {
+          $limit: 5,
+        },
+
+      ]);
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        topProducts,
+        "Top selling products"
+      )
+    );
+  });

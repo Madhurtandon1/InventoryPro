@@ -26,7 +26,9 @@ const AddOrder = () => {
           }),
         ]);
         setCustomers(custRes.data.data.customers);
-        setProducts(prodRes.data.data);
+        setProducts(
+  prodRes.data.data.products
+);
       } catch (err) {
         console.error("Failed to fetch customers/products", err);
         toast.error("❌ Failed to fetch customers or products.");

@@ -10,6 +10,8 @@ const api = axios.create({
   },
 });
 
+console.log(import.meta.env.VITE_BACKEND_URL);
+
 // Optional: Add a request interceptor to attach token from localStorage
 api.interceptors.request.use(
   (config) => {

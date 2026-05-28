@@ -16,12 +16,16 @@ const orderSchema = new mongoose.Schema(
     items: [
       {
         product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
-        quantity: { type: Number, required: true },
-        priceAtPurchase: { type: Number, required: true },
+        quantity: { type: Number, required: true, min:1 },
+        priceAtPurchase: {type: Number, required: true, min: 0,},
       },
     ],
-    totalAmount: Number,
-    paymentMethod: {
+    totalAmount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+      paymentMethod: {
       type: String,
       enum: ["Cash", "Card", "UPI", "Other"],
       required: true,
@@ -42,6 +46,19 @@ const orderSchema = new mongoose.Schema(
 
 // ✅ Ensure uniqueness per admin
 orderSchema.index({ createdBy: 1, orderNumber: 1 }, { unique: true });
-
+orderSchema.index({
+  createdBy: 1,
+  customer: 1,
+  createdAt: -1
+});
+orderSchema.index({
+  createdBy: 1,
+  status: 1,
+  createdAt: -1
+});
+orderSchema.index({
+  createdBy: 1,
+  createdAt: -1
+});
 export const Order = mongoose.model("Order", orderSchema);
 

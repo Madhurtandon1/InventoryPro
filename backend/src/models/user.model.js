@@ -7,9 +7,12 @@ const userSchema = new mongoose.Schema(
     username: {
       type: String,
       required: true,
+      trim: true,
     },
     email: {
       type: String,
+      trim: true,
+      lowercase: true,
     },
     password: {
   type: String,
@@ -49,15 +52,30 @@ const userSchema = new mongoose.Schema(
 // 🔐 Compound unique indexes to ensure uniqueness within a shop
 userSchema.index({ username: 1, createdBy: 1 }, { unique: true });
 userSchema.index({ email: 1, createdBy: 1 }, { unique: true });
-
+userSchema.index({createdBy: 1,role: 1,createdAt: -1});
 // 🔒 Hash password before save
 userSchema.pre("save", async function (next) {
-  if (this.isModified("password")) {
-    this.password = await bcrypt.hash(this.password, 10);
+
+  if (
+    this.isModified("password") &&
+    this.password
+  ) {
+    this.password =
+      await bcrypt.hash(
+        this.password,
+        10
+      );
   }
 
-  if (this.isModified("adminPasscode") && this.adminPasscode) {
-    this.adminPasscode = await bcrypt.hash(this.adminPasscode, 10);
+  if (
+    this.isModified("adminPasscode") &&
+    this.adminPasscode
+  ) {
+    this.adminPasscode =
+      await bcrypt.hash(
+        this.adminPasscode,
+        10
+      );
   }
 
   next();

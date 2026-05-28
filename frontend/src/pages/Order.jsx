@@ -95,7 +95,7 @@ useEffect(() => {
     }
   };
 
-  const filteredOrders = orders.filter((order) => {
+const filteredOrders =  (orders || []).filter((order) => {
     const orderMatch = order.orderNumber
       .toLowerCase()
       .includes(searchTerm.toLowerCase());

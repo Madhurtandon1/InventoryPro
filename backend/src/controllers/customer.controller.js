@@ -54,107 +54,402 @@ const customerId = `CUST-${String(counter.sequences.customer).padStart(4, "0")}-
   );
 });
 
-
-// ✅ Get all customers (with search)
 export const getAllCustomers = asyncHandler(async (req, res) => {
-  const ownerId = getOwnerId(req.user);
-  const query = { createdBy: ownerId };
 
-  if (req.query.search) {
-    query.name = { $regex: req.query.search, $options: "i" };
+  const ownerId = getOwnerId(req.user);
+
+  // Pagination
+  const page = Math.max(Number(req.query.page) || 1, 1);
+  const limit = Math.min(Number(req.query.limit) || 10, 50);
+
+  // Base query
+  const query = {
+    createdBy: ownerId,
+  };
+
+  // Search
+  if (req.query.search?.trim()) {
+    query.name = {
+      $regex: `^${req.query.search.trim()}`,
+      $options: "i",
+    };
   }
 
-  const customers = await Customer.find(query).sort({ createdAt: -1 });
-  res.status(200).json(new ApiResponse(200, { customers }));
+  // Fetch customers
+  const customers = await Customer.find(query)
+    .select("customerId name phone email createdAt")
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .lean();
+
+  // Total count for frontend pagination
+  const totalCustomers = await Customer.countDocuments(query);
+
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        customers,
+        pagination: {
+          totalCustomers,
+          currentPage: page,
+          totalPages: Math.ceil(totalCustomers / limit),
+          limit,
+        },
+      },
+      "Customers fetched successfully"
+    )
+  );
 });
 
-// ✅ Get customer by ID
+
+// ✅ Get all customers (with search)
+// export const getAllCustomers = asyncHandler(async (req, res) => {
+//   const ownerId = getOwnerId(req.user);
+//   const query = { createdBy: ownerId };
+
+//   if (req.query.search) {
+//     query.name = { $regex: req.query.search, $options: "i" };
+//   }
+
+//   const customers = await Customer.find(query).sort({ createdAt: -1 });
+//   res.status(200).json(new ApiResponse(200, { customers }));
+// });
+
+// // ✅ Get customer by ID
+// export const getCustomerById = asyncHandler(async (req, res) => {
+//   const ownerId = getOwnerId(req.user);
+//   const { customerId } = req.params;
+
+//   const customer = await Customer.findOne({ _id: customerId, createdBy: ownerId });
+//   if (!customer) throw new ApiError(404, "Customer not found");
+
+//   res.status(200).json(new ApiResponse(200, customer));
+// });
 export const getCustomerById = asyncHandler(async (req, res) => {
+
   const ownerId = getOwnerId(req.user);
+
   const { customerId } = req.params;
 
-  const customer = await Customer.findOne({ _id: customerId, createdBy: ownerId });
-  if (!customer) throw new ApiError(404, "Customer not found");
-
-  res.status(200).json(new ApiResponse(200, customer));
-});
-
-// ✅ Search customer by name
-export const getCustomerByName = asyncHandler(async (req, res) => {
-  const ownerId = getOwnerId(req.user);
-  const { name } = req.query;
-  if (!name) throw new ApiError(400, "Name is required");
-
-  const customers = await Customer.find({
-    name: { $regex: name, $options: "i" },
+  // Fetch customer
+  const customer = await Customer.findOne({
+    _id: customerId,
     createdBy: ownerId,
-  });
+  })
+    .select(
+      "customerId name phone email address createdAt"
+    )
+    .lean();
 
-  if (!customers.length) throw new ApiError(404, "No matching customers found");
+  // Customer not found
+  if (!customer) {
+    throw new ApiError(
+      404,
+      "Customer not found"
+    );
+  }
 
-  res.status(200).json(new ApiResponse(200, customers));
+  // Response
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      customer,
+      "Customer fetched successfully"
+    )
+  );
+});
+// ✅ Search customer by name
+// export const getCustomerByName = asyncHandler(async (req, res) => {
+//   const ownerId = getOwnerId(req.user);
+
+//     // Pagination
+//   const page = Math.max(Number(req.query.page) || 1, 1);
+//   const limit = Math.min(Number(req.query.limit) || 10, 50);
+  
+//   const { name } = req.query;
+//   if (!name) throw new ApiError(400, "Name is required");
+
+//   const customers = await Customer.find({
+//     name: { $regex: name, $options: "i" },
+//     createdBy: ownerId,
+//   })
+//     .skip((page - 1) * limit)
+//     .limit(limit)
+//     .lean();
+
+//   if (!customers.length) throw new ApiError(404, "No matching customers found");
+//   // Total count for frontend pagination
+//   const totalCustomers = await Customer.countDocuments(query);
+//   res.status(200).json(new ApiResponse(200, { customers, 
+//     pagination: { totalCustomers,
+//       currentPage: page,
+//       totalPages: Math.ceil(totalCustomers / limit),
+//       limit } }));
+// });
+
+export const getCustomerByName = asyncHandler(async (req, res) => {
+
+  const ownerId = getOwnerId(req.user);
+
+  // Pagination
+  const page = Math.max(Number(req.query.page) || 1, 1);
+  const limit = Math.min(Number(req.query.limit) || 10, 50);
+
+  const { name } = req.query;
+
+  // Validation
+  if (!name?.trim()) {
+    throw new ApiError(400, "Name is required");
+  }
+
+  // Query object
+  const query = {
+    createdBy: ownerId,
+    name: {
+      $regex: `^${name.trim()}`,
+      $options: "i",
+    },
+  };
+
+  // Fetch customers
+  const customers = await Customer.find(query)
+    .select("customerId name phone email createdAt")
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .lean();
+
+  // Count documents
+  const totalCustomers = await Customer.countDocuments(query);
+
+  if (!customers.length) {
+    throw new ApiError(404, "No matching customers found");
+  }
+
+  // Response
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        customers,
+        pagination: {
+          totalCustomers,
+          currentPage: page,
+          totalPages: Math.ceil(totalCustomers / limit),
+          limit,
+        },
+      },
+      "Customers fetched successfully"
+    )
+  );
 });
 
 // ✅ Get all orders by customer
+// export const getOrdersByCustomer = asyncHandler(async (req, res) => {
+//   const ownerId = getOwnerId(req.user);
+//   const { customerId } = req.params;
+
+//   const customer = await Customer.findOne({ _id: customerId, createdBy: ownerId });
+//   if (!customer) throw new ApiError(403, "Unauthorized access to this customer");
+
+//   const orders = await Order.find({
+//     customer: customerId,
+//     createdBy: ownerId,
+//   })
+//     .populate("items.product", "name sku price")
+//     .sort({ createdAt: -1 });
+
+//   res.status(200).json(new ApiResponse(200, orders));
+// });
 export const getOrdersByCustomer = asyncHandler(async (req, res) => {
+
   const ownerId = getOwnerId(req.user);
   const { customerId } = req.params;
 
-  const customer = await Customer.findOne({ _id: customerId, createdBy: ownerId });
-  if (!customer) throw new ApiError(403, "Unauthorized access to this customer");
+  // Pagination
+  const page = Math.max(Number(req.query.page) || 1, 1);
+  const limit = Math.min(Number(req.query.limit) || 10, 50);
 
-  const orders = await Order.find({
+  // Verify customer ownership
+  const customerExists = await Customer.exists({
+    _id: customerId,
+    createdBy: ownerId,
+  });
+
+  if (!customerExists) {
+    throw new ApiError(403, "Unauthorized access to this customer");
+  }
+
+  // Query object
+  const query = {
     customer: customerId,
     createdBy: ownerId,
-  })
-    .populate("items.product", "name sku price")
-    .sort({ createdAt: -1 });
+  };
 
-  res.status(200).json(new ApiResponse(200, orders));
+  // Fetch orders
+  const orders = await Order.find(query)
+    .select("orderNumber totalAmount paymentMethod status items createdAt")
+    .populate({
+      path: "items.product",
+      select: "name sku price",
+    })
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .lean();
+
+  // Total count
+  const totalOrders = await Order.countDocuments(query);
+
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        orders,
+        pagination: {
+          totalOrders,
+          currentPage: page,
+          totalPages: Math.ceil(totalOrders / limit),
+          limit,
+        },
+      },
+      "Orders fetched successfully"
+    )
+  );
 });
 
 // ✅ Update customer
+// export const updateCustomer = asyncHandler(async (req, res) => {
+//   const ownerId = getOwnerId(req.user);
+//   const { customerId } = req.params;
+//   const { name, phone, email, address } = req.body;
+
+
+//   // Verify customer ownership
+//   const customerExists = await Customer.exists({
+//     _id: customerId,
+//     createdBy: ownerId,
+//   });  
+//    if (!customerExists) {
+//     throw new ApiError(403, "Unauthorized access to this customer");
+//   }
+
+//   if (name) customerExists.name = name;
+//   if (phone) customerExists.phone = phone;
+//   if (email) customerExists.email = email;
+//   if (address) customerExists.address = address;
+
+//   await customerExists.save();
+//   res.status(200).json(new ApiResponse(200, customerExists, "Customer updated"));
+// });
 export const updateCustomer = asyncHandler(async (req, res) => {
+
   const ownerId = getOwnerId(req.user);
   const { customerId } = req.params;
+
   const { name, phone, email, address } = req.body;
 
-  const customer = await Customer.findOne({ _id: customerId, createdBy: ownerId });
-  if (!customer) throw new ApiError(404, "Customer not found");
+  // Build update object dynamically
+  const updateFields = {};
 
-  if (name) customer.name = name;
-  if (phone) customer.phone = phone;
-  if (email) customer.email = email;
-  if (address) customer.address = address;
+  if (name?.trim()) updateFields.name = name.trim();
+  if (phone) updateFields.phone = phone;
+  if (email) updateFields.email = email;
+  if (address) updateFields.address = address;
 
-  await customer.save();
-  res.status(200).json(new ApiResponse(200, customer, "Customer updated"));
+  // Update customer
+  const updatedCustomer = await Customer.findOneAndUpdate(
+    {
+      _id: customerId,
+      createdBy: ownerId,
+    },
+    {
+      $set: updateFields,
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  ).lean();
+
+  if (!updatedCustomer) {
+    throw new ApiError(404, "Customer not found");
+  }
+
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      updatedCustomer,
+      "Customer updated successfully"
+    )
+  );
 });
-
 // ✅ Delete customer
 export const deleteCustomer = asyncHandler(async (req, res) => {
   const ownerId = getOwnerId(req.user);
   const { customerId } = req.params;
 
-  const customer = await Customer.findOneAndDelete({ _id: customerId, createdBy: ownerId });
+  const customer = await Customer.findOneAndDelete({ _id: customerId, createdBy: ownerId }).lean();
   if (!customer) throw new ApiError(404, "Customer not found");
 
-  res.status(200).json(new ApiResponse(200, customer, "Customer deleted"));
+  res.status(200).json(new ApiResponse(200, { customerId: customer._id, name: customer.name }, "Customer deleted"));
 });
 
 // ✅ Top customers
 export const getTopCustomers = asyncHandler(async (req, res) => {
+
   const ownerId = getOwnerId(req.user);
 
-  const top = await Order.aggregate([
-    { $match: { status: "Completed", createdBy: ownerId } },
+  // Pagination
+  const page = Math.max(Number(req.query.page) || 1, 1);
+
+  const limit = Math.min(Number(req.query.limit) || 10, 50);
+
+  const skip = (page - 1) * limit;
+
+  // Aggregation pipeline
+  const topCustomers = await Order.aggregate([
+
+    // Step 1 → Filter early
+    {
+      $match: {
+        status: "Completed",
+        createdBy: ownerId,
+      },
+    },
+
+    // Step 2 → Group orders by customer
     {
       $group: {
         _id: "$customer",
-        totalSpent: { $sum: "$totalAmount" },
-        totalOrders: { $sum: 1 },
+        totalSpent: {
+          $sum: "$totalAmount",
+        },
+        totalOrders: {
+          $sum: 1,
+        },
       },
     },
+
+    // Step 3 → Sort by highest spending
+    {
+      $sort: {
+        totalSpent: -1,
+      },
+    },
+
+    // Step 4 → Pagination
+    {
+      $skip: skip,
+    },
+
+    {
+      $limit: limit,
+    },
+
+    // Step 5 → Join customer data
     {
       $lookup: {
         from: "customers",
@@ -163,13 +458,17 @@ export const getTopCustomers = asyncHandler(async (req, res) => {
         as: "customer",
       },
     },
-    { $unwind: "$customer" },
-    { $sort: { totalSpent: -1 } },
-    { $limit: 10 },
+
+    // Step 6 → Convert array → object
+    {
+      $unwind: "$customer",
+    },
+
+    // Step 7 → Final response structure
     {
       $project: {
         _id: 0,
-        customerId: "$customer._id",
+        customerId: "$customer.customerId",
         name: "$customer.name",
         totalSpent: 1,
         totalOrders: 1,
@@ -177,27 +476,121 @@ export const getTopCustomers = asyncHandler(async (req, res) => {
     },
   ]);
 
-  res.status(200).json(new ApiResponse(200, top, "Top customers"));
-});
+  // Total top customers count
+  const totalCustomers = await Order.aggregate([
 
-// ✅ Recent customers
-export const getRecentCustomers = asyncHandler(async (req, res) => {
-  const ownerId = getOwnerId(req.user);
-  const days = parseInt(req.query.days) || 7;
+    {
+      $match: {
+        status: "Completed",
+        createdBy: ownerId,
+      },
+    },
 
-  const since = new Date();
-  since.setDate(since.getDate() - days);
+    {
+      $group: {
+        _id: "$customer",
+      },
+    },
 
-  const customers = await Customer.find({
-    createdBy: ownerId,
-    createdAt: { $gte: since },
-  }).sort({ createdAt: -1 });
+    {
+      $count: "total",
+    },
+  ]);
 
+  const total =
+    totalCustomers[0]?.total || 0;
+
+  // Response
   res.status(200).json(
-    new ApiResponse(200, customers, `Customers added in last ${days} days`)
+    new ApiResponse(
+      200,
+      {
+        topCustomers,
+        pagination: {
+          totalCustomers: total,
+          currentPage: page,
+          totalPages: Math.ceil(total / limit),
+          limit,
+        },
+      },
+      "Top customers fetched successfully"
+    )
   );
 });
 
+// ✅ Recent customers
+// export const getRecentCustomers = asyncHandler(async (req, res) => {
+//   const ownerId = getOwnerId(req.user);
+//   const days = parseInt(req.query.days) || 7;
+
+//   const since = new Date();
+//   since.setDate(since.getDate() - days);
+
+//   const customers = await Customer.find({
+//     createdBy: ownerId,
+//     createdAt: { $gte: since },
+//   }).sort({ createdAt: -1 });
+
+//   res.status(200).json(
+//     new ApiResponse(200, customers, `Customers added in last ${days} days`)
+//   );
+// });
+export const getRecentCustomers = asyncHandler(async (req, res) => {
+
+  const ownerId = getOwnerId(req.user);
+
+  // Pagination
+  const page = Math.max(Number(req.query.page) || 1, 1);
+
+  const limit = Math.min(Number(req.query.limit) || 10, 50);
+
+  // Days validation
+  const days = Math.min(
+    Math.max(parseInt(req.query.days) || 7, 1),
+    365
+  );
+
+  // Create cutoff date
+  const since = new Date();
+
+  since.setDate(since.getDate() - days);
+
+  // Query
+  const query = {
+    createdBy: ownerId,
+    createdAt: {
+      $gte: since,
+    },
+  };
+
+  // Fetch customers
+  const customers = await Customer.find(query)
+    .select("customerId name phone email createdAt")
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .lean();
+
+  // Total count
+  const totalCustomers = await Customer.countDocuments(query);
+
+  // Response
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        customers,
+        pagination: {
+          totalCustomers,
+          currentPage: page,
+          totalPages: Math.ceil(totalCustomers / limit),
+          limit,
+        },
+      },
+      `Customers added in last ${days} days`
+    )
+  );
+});
 // ✅ Customer stats
 export const getCustomerStats = asyncHandler(async (req, res) => {
   const ownerId = getOwnerId(req.user);
@@ -227,17 +620,86 @@ export const getCustomerStats = asyncHandler(async (req, res) => {
 });
 
 // ✅ Customers without orders
+// export const getCustomersWithoutOrders = asyncHandler(async (req, res) => {
+//   const ownerId = getOwnerId(req.user);
+
+
+//     // Pagination
+//   const page = Math.max(Number(req.query.page) || 1, 1);
+
+//   const limit = Math.min(Number(req.query.limit) || 10, 50);
+
+
+//   const customersWithOrders = await Order.distinct("customer", { createdBy: ownerId });
+
+//   const customers = await Customer.find({
+//     _id: { $nin: customersWithOrders },
+//     createdBy: ownerId,
+//   })  .select("customerId name phone email createdAt")
+//     .sort({ createdAt: -1 })
+//     .skip((page - 1) * limit)
+//     .limit(limit)
+//     .lean();
+
+//   res.status(200).json(new ApiResponse(200, {customers,        pagination: {
+//           totalCustomers,
+//           currentPage: page,
+//           totalPages: Math.ceil(totalCustomers / limit),
+//           limit,
+//         },}, "Customers with no orders"));
+// });
 export const getCustomersWithoutOrders = asyncHandler(async (req, res) => {
+
   const ownerId = getOwnerId(req.user);
 
-  const customersWithOrders = await Order.distinct("customer", { createdBy: ownerId });
+  // Pagination
+  const page = Math.max(Number(req.query.page) || 1, 1);
 
-  const customers = await Customer.find({
-    _id: { $nin: customersWithOrders },
+  const limit = Math.min(Number(req.query.limit) || 10, 50);
+
+  // Get customer IDs who placed orders
+  const customersWithOrders = await Order.distinct(
+    "customer",
+    {
+      createdBy: ownerId,
+    }
+  );
+
+  // Query object
+  const query = {
+    _id: {
+      $nin: customersWithOrders,
+    },
     createdBy: ownerId,
-  });
+  };
 
-  res.status(200).json(new ApiResponse(200, customers, "Customers with no orders"));
+  // Fetch customers
+  const customers = await Customer.find(query)
+    .select("customerId name phone email createdAt")
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .lean();
+
+  // Total count
+  const totalCustomers = await Customer.countDocuments(query);
+
+  // Response
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        customers,
+        pagination: {
+          totalCustomers,
+          currentPage: page,
+          totalPages: Math.ceil(totalCustomers / limit),
+          limit,
+        },
+      },
+      "Customers with no orders fetched successfully"
+    )
+  ); 
 });
 
 // ✅ Optional backfill customerId utility

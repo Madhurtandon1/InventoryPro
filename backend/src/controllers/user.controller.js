@@ -20,36 +20,74 @@ const sendRefreshToken = (res, token) => {
 
 //  REGISTER USER
 export const registerUser = asyncHandler(async (req, res) => {
-  const { username, email, password, adminPasscode } = req.body;
 
-  if (!username || !email || !password || !adminPasscode) {
-    throw new ApiError(400, "All fields including admin passcode are required");
+  const {
+    username,
+    email,
+    password,
+    adminPasscode,
+  } = req.body;
+
+  // Validation
+  if (
+    !username ||
+    !email ||
+    !password ||
+    !adminPasscode
+  ) {
+    throw new ApiError(
+      400,
+      "All fields including admin passcode are required"
+    );
   }
 
-  // Check if user already exists (globally for admins)
-  const userExists = await User.findOne({ $or: [{ username }, { email }] });
-  if (userExists) {
-    throw new ApiError(409, "Username or email already exists");
+  // Check existing user
+  const existingUser = await User.exists({
+    $or: [
+      { username },
+      { email },
+    ],
+  });
+
+  if (existingUser) {
+    throw new ApiError(
+      409,
+      "Username or email already exists"
+    );
   }
 
-  // Create user with role=admin (by default), and store the passcode
+  // Create admin user
   const newUser = await User.create({
     username,
     email,
     password,
     adminPasscode,
-    role: "admin", // enforced
-    createdBy: null // shop owner
+    role: "admin",
+    createdBy: null,
   });
 
-  const accessToken = newUser.generateAccessToken();
-  const refreshToken = newUser.generateRefreshToken();
+  // Generate tokens
+  const accessToken =
+    newUser.generateAccessToken();
 
-  newUser.refreshToken = refreshToken;
-  await newUser.save({ validateBeforeSave: false });
+  const refreshToken =
+    newUser.generateRefreshToken();
 
-  sendRefreshToken(res, refreshToken);
+  // Save refresh token WITHOUT triggering pre-save middleware again
+  await User.findByIdAndUpdate(
+    newUser._id,
+    {
+      refreshToken,
+    }
+  );
 
+  // Send cookie
+  sendRefreshToken(
+    res,
+    refreshToken
+  );
+
+  // Response
   return res.status(201).json(
     new ApiResponse(
       201,
@@ -203,7 +241,7 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
 
 //  GET PROFILE
 export const getProfile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id).select("-password -refreshToken");
+  const user = await User.findById(req.user._id).select("username email role createdBy createdAt").lean();
 
   if (!user) {
     throw new ApiError(404, "User not found");
@@ -515,35 +553,113 @@ export const registerStaff = asyncHandler(async (req, res) => {
 });
 
 
+// export const getMyStaff = asyncHandler(async (req, res) => {
+//   if (req.user.role !== "admin") {
+//     throw new ApiError(403, "Only admins can view their staff");
+//   }
+
+//   const { search, page = 1, limit = 10 } = req.query;
+
+//   const filter = {
+//     createdBy: req.user._id,
+//     role: "staff",
+//   };
+
+//   if (search) {
+//     const regex = new RegExp(search, "i");
+//     filter.$or = [
+//       { username: regex },
+//       { email: regex },
+//     ];
+//   }
+
+//   const skip = (Number(page) - 1) * Number(limit);
+
+//   const staff = await User.find(filter)
+//     .select("-password")
+//     .skip(skip)
+//     .limit(Number(limit));
+
+//   const total = await User.countDocuments(filter);
+
+//   res.status(200).json(
+//     new ApiResponse(
+//       200,
+//       {
+//         staff,
+//         pagination: {
+//           total,
+//           page: Number(page),
+//           limit: Number(limit),
+//           totalPages: Math.ceil(total / limit),
+//         },
+//       },
+//       "Staff users fetched"
+//     )
+//   );
+// });
+
 export const getMyStaff = asyncHandler(async (req, res) => {
+
+  // RBAC
   if (req.user.role !== "admin") {
-    throw new ApiError(403, "Only admins can view their staff");
+    throw new ApiError(
+      403,
+      "Only admins can view staff"
+    );
   }
 
-  const { search, page = 1, limit = 10 } = req.query;
+  // Query params
+  const search =
+    req.query.search?.trim();
 
+  const page = Math.max(
+    Number(req.query.page) || 1,
+    1
+  );
+
+  const limit = Math.min(
+    Number(req.query.limit) || 10,
+    50
+  );
+
+  const skip = (page - 1) * limit;
+
+  // Base filter
   const filter = {
     createdBy: req.user._id,
     role: "staff",
   };
 
+  // Search filter
   if (search) {
-    const regex = new RegExp(search, "i");
+
+    const regex = new RegExp(
+      `^${search}`,
+      "i"
+    );
+
     filter.$or = [
       { username: regex },
       { email: regex },
     ];
   }
 
-  const skip = (Number(page) - 1) * Number(limit);
-
+  // Fetch staff
   const staff = await User.find(filter)
-    .select("-password")
+    .select(
+      "username email role createdAt"
+    )
+    .sort({ createdAt: -1 })
     .skip(skip)
-    .limit(Number(limit));
+    .limit(limit)
+    .lean();
 
-  const total = await User.countDocuments(filter);
+  // Total count
+  const total =
+    await User.countDocuments(filter);
 
+  // Response
   res.status(200).json(
     new ApiResponse(
       200,
@@ -551,12 +667,12 @@ export const getMyStaff = asyncHandler(async (req, res) => {
         staff,
         pagination: {
           total,
-          page: Number(page),
-          limit: Number(limit),
+          currentPage: page,
           totalPages: Math.ceil(total / limit),
+          limit,
         },
       },
-      "Staff users fetched"
+      "Staff users fetched successfully"
     )
   );
 });
