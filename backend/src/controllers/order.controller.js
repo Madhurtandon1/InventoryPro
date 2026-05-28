@@ -978,9 +978,10 @@ export const deleteOrder =  asyncHandler(async (req, res) => {
 
 const __filename = fileURLToPath(import.meta.url);
 
-const __dirname =  path.dirname(__filename);
+const __dirname = path.dirname(__filename);
 
-export const exportOrderPDF = asyncHandler(async (req, res) => {
+export const exportOrderPDF = asyncHandler(
+  async (req, res) => {
 
     // Owner
     const ownerId =
@@ -1012,17 +1013,48 @@ export const exportOrderPDF = asyncHandler(async (req, res) => {
     const fileName =
       `orders-${Date.now()}.pdf`;
 
-    const outputPath =
-      path.join(
-        __dirname,
-        `../../public/${fileName}`
-      );
+    // Public directory path
+    const publicDir = path.join(
+      __dirname,
+      "../../public"
+    );
 
-    // Generate PDF
-    await generateOrderPDF(
-      orders,
+    // Ensure public folder exists
+    if (!fs.existsSync(publicDir)) {
+
+      fs.mkdirSync(publicDir, {
+        recursive: true,
+      });
+    }
+
+    // Final PDF output path
+    const outputPath = path.join(
+      publicDir,
+      fileName
+    );
+
+    console.log(
+      "Generating PDF at:",
       outputPath
     );
+
+    // Generate PDF
+    try {
+
+      await generateOrderPDF(
+        orders,
+        outputPath
+      );
+
+    } catch (err) {
+
+      console.error(
+        "PDF generation failed:",
+        err
+      );
+
+      throw err;
+    }
 
     // Download file
     return res.download(
@@ -1031,18 +1063,20 @@ export const exportOrderPDF = asyncHandler(async (req, res) => {
       async (err) => {
 
         if (err) {
+
           console.error(
             "Download failed:",
             err
           );
         }
 
-        // Async cleanup
+        // Cleanup generated file
         fs.unlink(
           outputPath,
           unlinkErr => {
 
             if (unlinkErr) {
+
               console.error(
                 "File cleanup failed:",
                 unlinkErr
@@ -1052,4 +1086,5 @@ export const exportOrderPDF = asyncHandler(async (req, res) => {
         );
       }
     );
-});
+  }
+);
