@@ -974,16 +974,74 @@ export const deleteOrder =  asyncHandler(async (req, res) => {
       )
     );
   });
-  
 
+
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
+
+// export const exportOrderPDF = asyncHandler(async (req, res) => {
+//   // Determine Owner
+//   const ownerId = req.user.role === "staff" ? req.user.createdBy : req.user._id;
+
+//   // Fetch orders matching shop parameters
+//   const orders = await Order.find({ createdBy: ownerId })
+//     .select("orderNumber customer items totalAmount paymentMethod status createdAt")
+//     .populate({
+//       path: "customer",
+//       select: "name email phone",
+//       options: { lean: true },
+//     })
+//     .populate({
+//       path: "items.product",
+//       select: "name sku price",
+//       options: { lean: true },
+//     })
+//     .sort({ createdAt: -1 })
+//     .lean();
+
+//   const fileName = `orders-${Date.now()}.pdf`;
+//   const publicDir = path.join(__dirname, "../../public");
+
+//   if (!fs.existsSync(publicDir)) {
+//     fs.mkdirSync(publicDir, { recursive: true });
+//   }
+
+//   const outputPath = path.join(publicDir, fileName);
+//   console.log("Generating fresh statement PDF node at:", outputPath);
+
+//   // Generate the actual PDF layout file
+//   try {
+//     await generateOrderPDF(orders, outputPath);
+//   } catch (err) {
+//     console.error("PDF engine structural generation failed:", err);
+//     throw new ApiError(500, "PDF generation step fault on engine stream");
+//   }
+
+//   // ⚡ FIX 2: Send file cleanly via response download stream pipelines
+//   res.download(outputPath, fileName, (err) => {
+//     if (err) {
+//       console.error("Download pipeline broke down mid-stream:", err);
+//     }
+
+//     // ⚡ FIX 3: Safe synchronous deletion happens ONLY after download is completely finished or dropped
+//     try {
+//       if (fs.existsSync(outputPath)) {
+//         fs.unlinkSync(outputPath);
+//         console.log("Temporary storage file cleared cleanly from disk cache.");
+//       }
+//     } catch (unlinkErr) {
+//       console.error("File cleanup failed:", unlinkErr);
+//     }
+//   });
+// });
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const exportOrderPDF = asyncHandler(async (req, res) => {
-  // Determine Owner
+  // Determine Owner context
   const ownerId = req.user.role === "staff" ? req.user.createdBy : req.user._id;
 
-  // Fetch orders matching shop parameters
+  // Fetch orders data
   const orders = await Order.find({ createdBy: ownerId })
     .select("orderNumber customer items totalAmount paymentMethod status createdAt")
     .populate({
@@ -1000,37 +1058,48 @@ export const exportOrderPDF = asyncHandler(async (req, res) => {
     .lean();
 
   const fileName = `orders-${Date.now()}.pdf`;
-  const publicDir = path.join(__dirname, "../../public");
-
-  if (!fs.existsSync(publicDir)) {
-    fs.mkdirSync(publicDir, { recursive: true });
+  
+  // ⚡ FIX: Use the OS temporary folder /tmp instead of project source folder
+  // Render filesystem handles /tmp write permissions much more gracefully
+  const tempDir = "/tmp"; 
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
   }
 
-  const outputPath = path.join(publicDir, fileName);
-  console.log("Generating fresh statement PDF node at:", outputPath);
+  const outputPath = path.join(tempDir, fileName);
+  console.log("Generating fresh statement PDF node at safe route:", outputPath);
 
-  // Generate the actual PDF layout file
   try {
+    // Generate the physical PDF file onto disk
     await generateOrderPDF(orders, outputPath);
+    
+    // Check if the file was created successfully before attempting to send it
+    if (!fs.existsSync(outputPath)) {
+      throw new ApiError(500, "PDF file was not created on disk wrapper");
+    }
+
+    // ⚡ FIX: Send the file structure out, and handle deleting inside the stream close event safely
+    res.download(outputPath, fileName, (err) => {
+      if (err) {
+        console.error("Download pipeline stream broke down:", err);
+      }
+
+      // Safe asynchronous cleanup inside the closed connection channel block
+      fs.unlink(outputPath, (unlinkErr) => {
+        if (unlinkErr) {
+          console.error("Delayed temporary file cleanup failure:", unlinkErr);
+        } else {
+          console.log("Temporary storage file cleared safely AFTER stream complete.");
+        }
+      });
+    });
+
   } catch (err) {
     console.error("PDF engine structural generation failed:", err);
-    throw new ApiError(500, "PDF generation step fault on engine stream");
+    // If an error happens before res.download, clean up the file if it exists
+    if (fs.existsSync(outputPath)) {
+      fs.unlinkSync(outputPath);
+    }
+    throw new ApiError(500, "PDF generation step failed: " + err.message);
   }
-
-  // ⚡ FIX 2: Send file cleanly via response download stream pipelines
-  res.download(outputPath, fileName, (err) => {
-    if (err) {
-      console.error("Download pipeline broke down mid-stream:", err);
-    }
-
-    // ⚡ FIX 3: Safe synchronous deletion happens ONLY after download is completely finished or dropped
-    try {
-      if (fs.existsSync(outputPath)) {
-        fs.unlinkSync(outputPath);
-        console.log("Temporary storage file cleared cleanly from disk cache.");
-      }
-    } catch (unlinkErr) {
-      console.error("File cleanup failed:", unlinkErr);
-    }
-  });
 });
