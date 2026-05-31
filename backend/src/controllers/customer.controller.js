@@ -77,7 +77,7 @@ export const getAllCustomers = asyncHandler(async (req, res) => {
 
   // Fetch customers
   const customers = await Customer.find(query)
-    .select("customerId name phone email createdAt")
+    .select("customerId name phone email address createdAt")
     .sort({ createdAt: -1 })
     .skip((page - 1) * limit)
     .limit(limit)
