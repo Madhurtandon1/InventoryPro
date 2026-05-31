@@ -1033,16 +1033,14 @@ export const deleteOrder =  asyncHandler(async (req, res) => {
 //       console.error("File cleanup failed:", unlinkErr);
 //     }
 //   });
-// });
-const __filename = fileURLToPath(import.meta.url);
+// });const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const exportOrderPDF = asyncHandler(async (req, res) => {
-  // Determine Owner context
   const ownerId = req.user.role === "staff" ? req.user.createdBy : req.user._id;
 
   // Fetch orders data
-  const orders = await Order.find({ createdBy: ownerId })
+  const rawOrders = await Order.find({ createdBy: ownerId })
     .select("orderNumber customer items totalAmount paymentMethod status createdAt")
     .populate({
       path: "customer",
@@ -1057,47 +1055,64 @@ export const exportOrderPDF = asyncHandler(async (req, res) => {
     .sort({ createdAt: -1 })
     .lean();
 
+  // ⚡ FIX 1: Clean and validate dataset records to prevent null-pointer template crashes
+  const orders = rawOrders.map(order => ({
+    ...order,
+    orderNumber: order.orderNumber || "UNKNOWN-BILL",
+    paymentMethod: order.paymentMethod ? String(order.paymentMethod).replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, "") : "Paid", // Cleans emojis safely!
+    customer: {
+      name: order.customer?.name || "Walk-In Customer",
+      email: order.customer?.email || "N/A",
+      phone: order.customer?.phone || "N/A"
+    },
+    items: (order.items || []).map(item => ({
+      quantity: item.quantity || 1,
+      product: {
+        name: item.product?.name || "Deleted Product Item",
+        sku: item.product?.sku || "N/A",
+        price: item.product?.price || 0
+      }
+    }))
+  }));
+
   const fileName = `orders-${Date.now()}.pdf`;
-  
-  // ⚡ Keep path standard to your local directory setup
   const publicDir = path.join(__dirname, "../../public");
+  
   if (!fs.existsSync(publicDir)) {
     fs.mkdirSync(publicDir, { recursive: true });
   }
 
   const outputPath = path.join(publicDir, fileName);
-  console.log("Generating fresh statement PDF node at safe route:", outputPath);
 
   try {
-    // Generate the physical PDF file onto disk
+    // Attempt generation step
     await generateOrderPDF(orders, outputPath);
     
     if (!fs.existsSync(outputPath)) {
-      throw new ApiError(500, "PDF file creation step failed on compilation");
+      throw new Error("PDF file footprint was not found on server disk coordinates");
     }
 
-    // ⚡ THE FIX: Send file using res.sendFile and use the built-in option to clean up automatically on close!
+    // Stream transfer directly to browser client layer
     res.sendFile(outputPath, { headers: { "Content-Disposition": `attachment; filename="${fileName}"` } }, (err) => {
-      if (err) {
-        console.error("Pipeline stream error telemetry:", err);
-      }
-
-      // ⚡ Safe Asynchronous File Deletion AFTER the download has successfully left the server
-      fs.unlink(outputPath, (unlinkErr) => {
-        if (unlinkErr) {
-          console.error("Delayed temporary file cleanup failure:", unlinkErr);
-        } else {
-          console.log("Temporary storage file cleared safely from server disk layer.");
-        }
+      if (err) console.error("Pipeline streaming error:", err);
+      
+      // Cleanup disk traces
+      fs.unlink(outputPath, (e) => {
+        if (e) console.error("Cleanup error:", e);
       });
     });
 
   } catch (err) {
-    console.error("PDF engine structural generation failed completely:", err);
-    // If an error happens before sending, make sure to clean up disk traces safely
+    // ⚡ FIX 2: Check Render server terminal logs to capture the exact layout error message
+    console.error("❌ CRITICAL PDF CORE GENERATION FAILURE DETECTED:");
+    console.error("Error Message ->", err.message);
+    console.error("Error Stack Trace ->", err.stack);
+
     if (fs.existsSync(outputPath)) {
       try { fs.unlinkSync(outputPath); } catch (e) {}
     }
-    throw new ApiError(500, "Failed to compile statement PDF documentation: " + err.message);
+
+    // Throw safe validation message outward to frontend interface response containers
+    throw new ApiError(500, `PDF Generation Engine Crashed: ${err.message}`);
   }
 });
