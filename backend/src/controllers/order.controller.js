@@ -1034,12 +1034,16 @@ export const deleteOrder =  asyncHandler(async (req, res) => {
 //     }
 //   });
 // });const __filename = fileURLToPath(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Helper function to create a small delay for background file compiling
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const exportOrderPDF = asyncHandler(async (req, res) => {
   const ownerId = req.user.role === "staff" ? req.user.createdBy : req.user._id;
 
-  // Fetch orders data
+  // Fetch data rows securely
   const rawOrders = await Order.find({ createdBy: ownerId })
     .select("orderNumber customer items totalAmount paymentMethod status createdAt")
     .populate({
@@ -1055,11 +1059,11 @@ export const exportOrderPDF = asyncHandler(async (req, res) => {
     .sort({ createdAt: -1 })
     .lean();
 
-  // ⚡ FIX 1: Clean and validate dataset records to prevent null-pointer template crashes
+  // Clean data properties to prevent crash mutations
   const orders = rawOrders.map(order => ({
     ...order,
     orderNumber: order.orderNumber || "UNKNOWN-BILL",
-    paymentMethod: order.paymentMethod ? String(order.paymentMethod).replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, "") : "Paid", // Cleans emojis safely!
+    paymentMethod: order.paymentMethod ? String(order.paymentMethod).replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, "") : "Paid",
     customer: {
       name: order.customer?.name || "Walk-In Customer",
       email: order.customer?.email || "N/A",
@@ -1083,36 +1087,40 @@ export const exportOrderPDF = asyncHandler(async (req, res) => {
   }
 
   const outputPath = path.join(publicDir, fileName);
+  console.log("Generating fresh statement PDF node at safe route:", outputPath);
 
   try {
-    // Attempt generation step
+    // 1. Fire file creation process
     await generateOrderPDF(orders, outputPath);
     
+    // ⚡ FIX: Wait exactly 1.5 seconds to let the file stream finish writing on Render's disk layer
+    console.log("Waiting for file stream serialization to complete...");
+    await delay(1500);
+
+    // 2. Run check now that file has compiled completely
     if (!fs.existsSync(outputPath)) {
-      throw new Error("PDF file footprint was not found on server disk coordinates");
+      throw new Error("PDF generation took too long or disk stream dropped out.");
     }
 
-    // Stream transfer directly to browser client layer
+    // 3. Send file out cleanly via download pipe
     res.sendFile(outputPath, { headers: { "Content-Disposition": `attachment; filename="${fileName}"` } }, (err) => {
       if (err) console.error("Pipeline streaming error:", err);
       
-      // Cleanup disk traces
+      // Clear storage footprint
       fs.unlink(outputPath, (e) => {
-        if (e) console.error("Cleanup error:", e);
+        if (e) console.error("Cleanup warning:", e);
+        else console.log("Temporary document cleared cleanly from cache.");
       });
     });
 
   } catch (err) {
-    // ⚡ FIX 2: Check Render server terminal logs to capture the exact layout error message
     console.error("❌ CRITICAL PDF CORE GENERATION FAILURE DETECTED:");
     console.error("Error Message ->", err.message);
-    console.error("Error Stack Trace ->", err.stack);
 
     if (fs.existsSync(outputPath)) {
       try { fs.unlinkSync(outputPath); } catch (e) {}
     }
 
-    // Throw safe validation message outward to frontend interface response containers
-    throw new ApiError(500, `PDF Generation Engine Crashed: ${err.message}`);
+    throw new ApiError(500, `Failed to compile statement PDF documentation: ${err.message}`);
   }
 });
