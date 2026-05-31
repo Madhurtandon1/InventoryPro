@@ -1059,47 +1059,45 @@ export const exportOrderPDF = asyncHandler(async (req, res) => {
 
   const fileName = `orders-${Date.now()}.pdf`;
   
-  // ⚡ FIX: Use the OS temporary folder /tmp instead of project source folder
-  // Render filesystem handles /tmp write permissions much more gracefully
-  const tempDir = "/tmp"; 
-  if (!fs.existsSync(tempDir)) {
-    fs.mkdirSync(tempDir, { recursive: true });
+  // ⚡ Keep path standard to your local directory setup
+  const publicDir = path.join(__dirname, "../../public");
+  if (!fs.existsSync(publicDir)) {
+    fs.mkdirSync(publicDir, { recursive: true });
   }
 
-  const outputPath = path.join(tempDir, fileName);
+  const outputPath = path.join(publicDir, fileName);
   console.log("Generating fresh statement PDF node at safe route:", outputPath);
 
   try {
     // Generate the physical PDF file onto disk
     await generateOrderPDF(orders, outputPath);
     
-    // Check if the file was created successfully before attempting to send it
     if (!fs.existsSync(outputPath)) {
-      throw new ApiError(500, "PDF file was not created on disk wrapper");
+      throw new ApiError(500, "PDF file creation step failed on compilation");
     }
 
-    // ⚡ FIX: Send the file structure out, and handle deleting inside the stream close event safely
-    res.download(outputPath, fileName, (err) => {
+    // ⚡ THE FIX: Send file using res.sendFile and use the built-in option to clean up automatically on close!
+    res.sendFile(outputPath, { headers: { "Content-Disposition": `attachment; filename="${fileName}"` } }, (err) => {
       if (err) {
-        console.error("Download pipeline stream broke down:", err);
+        console.error("Pipeline stream error telemetry:", err);
       }
 
-      // Safe asynchronous cleanup inside the closed connection channel block
+      // ⚡ Safe Asynchronous File Deletion AFTER the download has successfully left the server
       fs.unlink(outputPath, (unlinkErr) => {
         if (unlinkErr) {
           console.error("Delayed temporary file cleanup failure:", unlinkErr);
         } else {
-          console.log("Temporary storage file cleared safely AFTER stream complete.");
+          console.log("Temporary storage file cleared safely from server disk layer.");
         }
       });
     });
 
   } catch (err) {
-    console.error("PDF engine structural generation failed:", err);
-    // If an error happens before res.download, clean up the file if it exists
+    console.error("PDF engine structural generation failed completely:", err);
+    // If an error happens before sending, make sure to clean up disk traces safely
     if (fs.existsSync(outputPath)) {
-      fs.unlinkSync(outputPath);
+      try { fs.unlinkSync(outputPath); } catch (e) {}
     }
-    throw new ApiError(500, "PDF generation step failed: " + err.message);
+    throw new ApiError(500, "Failed to compile statement PDF documentation: " + err.message);
   }
 });
