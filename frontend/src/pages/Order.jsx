@@ -298,15 +298,13 @@
 
 
 
-
-
 import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "../utils/axios.js";
 import { Toaster, toast } from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
-import { useLocation, useNavigate } from "react-router-dom";
 import api from "../services/api.js";
-import { FiFileText, FiSearch, FiFilter, FiDownload, FiTrash2, FiAlertTriangle } from "react-icons/fi";
+import { FiFileText, FiSearch, FiFilter, FiDownload, FiTrash2, FiAlertTriangle, FiLoader } from "react-icons/fi";
 
 const Order = () => {
   const token = localStorage.getItem("token");
@@ -319,16 +317,14 @@ const Order = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState(null);
+  const [downloading, setDownloading] = useState(false);
 
   // Step 1: Update filter based on URL (e.g., ?status=Pending)
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const statusFromUrl = queryParams.get("status");
 
-    if (
-      statusFromUrl &&
-      ["Pending", "Completed", "Cancelled"].includes(statusFromUrl)
-    ) {
+    if (statusFromUrl && ["Pending", "Completed", "Cancelled"].includes(statusFromUrl)) {
       setStatusFilter(statusFromUrl);
     } else {
       setStatusFilter(""); // Default to all
@@ -351,7 +347,7 @@ const Order = () => {
           headers: { Authorization: `Bearer ${token}` },
           params: finalStatus ? { status: finalStatus } : {},
         });
-        setOrders(res.data.data.orders);
+        setOrders(res.data?.data?.orders || []);
       } catch (error) {
         toast.error("❌ Error fetching orders.");
       }
@@ -369,12 +365,11 @@ const Order = () => {
       );
       toast.success("✅ Order status updated.");
       
-      // Refetch current orders dynamically
       const res = await axios.get("/orders", {
         headers: { Authorization: `Bearer ${token}` },
         params: statusFilter ? { status: statusFilter } : {},
       });
-      setOrders(res.data.data.orders);
+      setOrders(res.data?.data?.orders || []);
     } catch (err) {
       toast.error("❌ Failed to update status.");
     }
@@ -395,28 +390,18 @@ const Order = () => {
       setShowConfirmModal(false);
       setOrderToDelete(null);
       
-      // Refresh local list state
       const res = await axios.get("/orders", {
         headers: { Authorization: `Bearer ${token}` },
         params: statusFilter ? { status: statusFilter } : {},
       });
-      setOrders(res.data.data.orders);
+      setOrders(res.data?.data?.orders || []);
     } catch (err) {
       toast.error("❌ Failed to delete order.");
     }
   };
 
-  const filteredOrders = (orders || []).filter((order) => {
-    const orderMatch = order.orderNumber
-      ?.toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const customerMatch = order.customer?.name
-      ?.toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    return orderMatch || customerMatch;
-  });
-
   const downloadPDF = async () => {
+    setDownloading(true);
     try {
       const response = await api.get("/orders/export/pdf", {
         responseType: "blob",
@@ -425,22 +410,39 @@ const Order = () => {
         },
       });
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      if (response.data.size === 0) {
+        throw new Error("Received empty dataset stream from server");
+      }
+
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", "orders.pdf");
+      link.setAttribute("download", `Shop_Orders_Statement_${Date.now()}.pdf`);
+      
       document.body.appendChild(link);
       link.click();
-      link.remove();
+      
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
       toast.success("📄 PDF Exported Successfully!");
     } catch (error) {
-      console.error("Failed to download PDF", error);
+      console.error("Detailed Frontend PDF Processing Error Telemetry:", error);
       toast.error("❌ Failed to download statement PDF");
+    } finally {
+      setDownloading(false);
     }
   };
 
+  const filteredOrders = (orders || []).filter((order) => {
+    const orderMatch = order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase());
+    const customerMatch = order.customer?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    return orderMatch || customerMatch;
+  });
+
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 bg-[#F8FAFC] dark:bg-slate-950 min-h-screen text-slate-900 dark:text-slate-100 transition-colors duration-200">
+    /* STRETCH COMPONENT WORKSPACE: Uses w-full to prevent compressed sidebar spacing */
+    <div className="p-4 md:p-8 w-full min-h-screen bg-[#F8FAFC] dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
       <Toaster position="top-right" />
 
       {/* Header Unit */}
@@ -448,18 +450,20 @@ const Order = () => {
         <div>
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
             <FiFileText className="text-blue-600 dark:text-blue-500" />
-            <span>Order Ledger</span>
+            <span>All Bills / Orders</span>
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Review checkout declarations, change transaction states, and download account billing documentation.
+            Review your shop checkout records, modify billing status options, or generate statements.
           </p>
         </div>
 
         <button
           onClick={downloadPDF}
-          className="bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 font-semibold text-sm px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-center gap-2 shadow-sm transition-all"
+          disabled={downloading}
+          className="bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 font-semibold text-sm px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50"
         >
-          <FiDownload size={15} /> Export Statement PDF
+          {downloading ? <FiLoader className="animate-spin" size={15} /> : <FiDownload size={15} />}
+          <span>{downloading ? "Generating PDF..." : "Export Statement PDF"}</span>
         </button>
       </div>
 
@@ -469,11 +473,11 @@ const Order = () => {
         {/* Status Dropdown */}
         <div className="flex items-center gap-2.5">
           <label htmlFor="status" className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
-            <FiFilter /> Lifecycle Status:
+            <FiFilter /> Order Filter:
           </label>
           <select
             id="status"
-            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider focus:outline-none focus:border-blue-500 transition-colors"
+            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider focus:outline-none focus:border-blue-500 transition-colors cursor-pointer"
             value={statusFilter}
             onChange={(e) => {
               const selectedStatus = e.target.value;
@@ -485,7 +489,7 @@ const Order = () => {
               }
             }}
           >
-            <option value="">All Orders</option>
+            <option value="">All Shop Statuses</option>
             <option value="Completed">Completed</option>
             <option value="Pending">Pending</option>
             <option value="Cancelled">Cancelled</option>
@@ -499,7 +503,7 @@ const Order = () => {
           </span>
           <input
             type="text"
-            placeholder="Search by statement number or client name..."
+            placeholder="Search by bill number or customer name..."
             className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-blue-500 transition-all"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -513,19 +517,19 @@ const Order = () => {
           <table className="min-w-full table-auto border-collapse text-left text-sm text-slate-700 dark:text-slate-300">
             <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-400 border-b border-slate-200 dark:border-slate-800 text-xs font-bold uppercase tracking-wider">
               <tr>
-                <th className="px-6 py-3.5">Statement Code</th>
-                <th className="px-6 py-3.5">Client Identity</th>
-                <th className="px-6 py-3.5">Manifest Items</th>
-                <th className="px-6 py-3.5">Pipeline Status</th>
-                <th className="px-6 py-3.5">Creation Timestamp</th>
-                {user?.role === "admin" && <th className="px-6 py-3.5 text-right">Registry Actions</th>}
+                <th className="px-6 py-3.5">Bill Code</th>
+                <th className="px-6 py-3.5">Customer Details</th>
+                <th className="px-6 py-3.5">Items Purchased</th>
+                <th className="px-6 py-3.5">Status</th>
+                <th className="px-6 py-3.5">Date Created</th>
+                {user?.role === "admin" && <th className="px-6 py-3.5 text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {filteredOrders.length === 0 ? (
                 <tr>
                   <td colSpan={user?.role === "admin" ? "6" : "5"} className="text-center py-12 text-slate-400 dark:text-slate-500 font-medium">
-                    No active processing queues found matching target filters.
+                    No matching orders or bills found.
                   </td>
                 </tr>
               ) : (
@@ -533,13 +537,13 @@ const Order = () => {
                   <tr key={order._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 group transition-colors">
                     <td className="px-6 py-4 font-mono font-bold text-xs text-slate-900 dark:text-white">{order.orderNumber}</td>
                     <td className="px-6 py-4">
-                      <div className="font-semibold text-slate-900 dark:text-white">{order.customer?.name || "Anonymous Base"}</div>
-                      <div className="text-xs text-slate-400 dark:text-slate-500 font-mono mt-0.5">{order.customer?.email || "No digital destination"}</div>
+                      <div className="font-semibold text-slate-900 dark:text-white">{order.customer?.name || "Walk-In Customer"}</div>
+                      <div className="text-xs text-slate-400 dark:text-slate-500 font-mono mt-0.5">{order.customer?.email || "No Email"}</div>
                     </td>
                     <td className="px-6 py-4 max-w-xs space-y-1">
                       {order.items.map((item, idx) => (
                         <div key={idx} className="text-xs text-slate-600 dark:text-slate-400 truncate">
-                          <span className="font-medium text-slate-900 dark:text-slate-200">• {item.product?.name || "Deprecated item"}</span>
+                          <span className="font-medium text-slate-900 dark:text-slate-200">• {item.product?.name || "Product Item"}</span>
                           <span className="font-mono text-slate-400 ml-1">×{item.quantity}</span>
                         </div>
                       ))}
@@ -564,11 +568,9 @@ const Order = () => {
                     {user?.role === "admin" && (
                       <td className="px-6 py-4 text-right space-y-1.5 whitespace-nowrap opacity-90 group-hover:opacity-100 transition-opacity">
                         <select
-                          className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold rounded-lg px-2 py-1 focus:outline-none focus:border-blue-500"
+                          className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold rounded-lg px-2 py-1 focus:outline-none focus:border-blue-500 cursor-pointer"
                           value={order.status}
-                          onChange={(e) =>
-                            handleStatusChange(order.orderNumber, e.target.value)
-                          }
+                          onChange={(e) => handleStatusChange(order.orderNumber, e.target.value)}
                         >
                           <option value="Pending">Pending</option>
                           <option value="Completed">Completed</option>
@@ -579,7 +581,7 @@ const Order = () => {
                             onClick={() => confirmDelete(order._id)}
                             className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 text-xs font-bold inline-flex items-center gap-1 transition-colors"
                           >
-                            <FiTrash2 size={12} /> Remove Node
+                            <FiTrash2 size={12} /> Remove Bill
                           </button>
                         </div>
                       </td>
@@ -592,7 +594,7 @@ const Order = () => {
         </div>
       </div>
 
-      {/* Confirmation Dismissal Dialogue Overlay */}
+      {/* Confirmation Modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-xl shadow-xl max-w-sm w-full space-y-4">
@@ -602,7 +604,7 @@ const Order = () => {
             <div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">Confirm Deletion</h2>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-                Are you completely sure you want to delete this order? This action permanently overrides metrics calculation histories and cannot be undone.
+                Are you completely sure you want to delete this bill? This action permanently removes it from your shop history records.
               </p>
             </div>
             <div className="flex justify-end space-x-2.5 pt-2">
@@ -619,7 +621,7 @@ const Order = () => {
                 onClick={handleDelete}
                 className="px-4 py-2 text-sm font-semibold bg-rose-600 text-white rounded-xl hover:bg-rose-700 shadow-md shadow-rose-500/10 transition-colors"
               >
-                Delete Statement
+                Delete Bill
               </button>
             </div>
           </div>

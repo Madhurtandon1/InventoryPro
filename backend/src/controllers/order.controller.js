@@ -974,117 +974,63 @@ export const deleteOrder =  asyncHandler(async (req, res) => {
       )
     );
   });
-
+  
 
 const __filename = fileURLToPath(import.meta.url);
-
 const __dirname = path.dirname(__filename);
 
-export const exportOrderPDF = asyncHandler(
-  async (req, res) => {
+export const exportOrderPDF = asyncHandler(async (req, res) => {
+  // Determine Owner
+  const ownerId = req.user.role === "staff" ? req.user.createdBy : req.user._id;
 
-    // Owner
-    const ownerId =
-      req.user.role === "staff"
-        ? req.user.createdBy
-        : req.user._id;
-
-    // Fetch orders
-    const orders = await Order.find({
-      createdBy: ownerId,
+  // Fetch orders matching shop parameters
+  const orders = await Order.find({ createdBy: ownerId })
+    .select("orderNumber customer items totalAmount paymentMethod status createdAt")
+    .populate({
+      path: "customer",
+      select: "name email phone",
+      options: { lean: true },
     })
-      .select(
-        "orderNumber customer items totalAmount paymentMethod status createdAt"
-      )
-      .populate({
-        path: "customer",
-        select: "name email phone",
-        options: { lean: true },
-      })
-      .populate({
-        path: "items.product",
-        select: "name sku price",
-        options: { lean: true },
-      })
-      .sort({ createdAt: -1 })
-      .lean();
+    .populate({
+      path: "items.product",
+      select: "name sku price",
+      options: { lean: true },
+    })
+    .sort({ createdAt: -1 })
+    .lean();
 
-    // Unique filename
-    const fileName =
-      `orders-${Date.now()}.pdf`;
+  const fileName = `orders-${Date.now()}.pdf`;
+  const publicDir = path.join(__dirname, "../../public");
 
-    // Public directory path
-    const publicDir = path.join(
-      __dirname,
-      "../../public"
-    );
-
-    // Ensure public folder exists
-    if (!fs.existsSync(publicDir)) {
-
-      fs.mkdirSync(publicDir, {
-        recursive: true,
-      });
-    }
-
-    // Final PDF output path
-    const outputPath = path.join(
-      publicDir,
-      fileName
-    );
-
-    console.log(
-      "Generating PDF at:",
-      outputPath
-    );
-
-    // Generate PDF
-    try {
-
-      await generateOrderPDF(
-        orders,
-        outputPath
-      );
-
-    } catch (err) {
-
-      console.error(
-        "PDF generation failed:",
-        err
-      );
-
-      throw err;
-    }
-
-    // Download file
-    return res.download(
-      outputPath,
-      fileName,
-      async (err) => {
-
-        if (err) {
-
-          console.error(
-            "Download failed:",
-            err
-          );
-        }
-
-        // Cleanup generated file
-        fs.unlink(
-          outputPath,
-          unlinkErr => {
-
-            if (unlinkErr) {
-
-              console.error(
-                "File cleanup failed:",
-                unlinkErr
-              );
-            }
-          }
-        );
-      }
-    );
+  if (!fs.existsSync(publicDir)) {
+    fs.mkdirSync(publicDir, { recursive: true });
   }
-);
+
+  const outputPath = path.join(publicDir, fileName);
+  console.log("Generating fresh statement PDF node at:", outputPath);
+
+  // Generate the actual PDF layout file
+  try {
+    await generateOrderPDF(orders, outputPath);
+  } catch (err) {
+    console.error("PDF engine structural generation failed:", err);
+    throw new ApiError(500, "PDF generation step fault on engine stream");
+  }
+
+  // ⚡ FIX 2: Send file cleanly via response download stream pipelines
+  res.download(outputPath, fileName, (err) => {
+    if (err) {
+      console.error("Download pipeline broke down mid-stream:", err);
+    }
+
+    // ⚡ FIX 3: Safe synchronous deletion happens ONLY after download is completely finished or dropped
+    try {
+      if (fs.existsSync(outputPath)) {
+        fs.unlinkSync(outputPath);
+        console.log("Temporary storage file cleared cleanly from disk cache.");
+      }
+    } catch (unlinkErr) {
+      console.error("File cleanup failed:", unlinkErr);
+    }
+  });
+});

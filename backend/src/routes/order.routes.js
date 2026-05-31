@@ -21,12 +21,14 @@ const router = express.Router();
 // All routes below require authentication
 router.use(verifyJWT);
 
+router.get("/export/pdf", verifyJWT, exportOrderPDF);
+
+
 // Create a new order
 router.post("/",authorizeRoles("admin", "staff"), createOrder);
 
 // Update order status by order number
 router.patch("/:orderNumber/status", verifyJWT, updateOrderStatusByOrderNumber);
-router.get("/export/pdf", verifyJWT, exportOrderPDF);
 
 
 // Get all orders with optional filters
