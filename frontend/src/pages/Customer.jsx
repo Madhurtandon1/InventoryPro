@@ -235,13 +235,12 @@
 // export default Customers;
 
 
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../utils/axios.js";
 import { Toaster, toast } from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
-import { FiUsers, FiUserPlus, FiSearch, FiFilter, FiTrendingUp, FiClock, FiAlertCircle, FiRefreshCw, FiEdit2, FiTrash2, FiCheck, FiX } from "react-icons/fi";
+import { FiUsers, FiUserPlus, FiSearch, FiTrendingUp, FiClock, FiAlertCircle, FiRefreshCw, FiEdit2, FiTrash2, FiCheck, FiX } from "react-icons/fi";
 
 const Customers = () => {
   const token = localStorage.getItem("token");
@@ -253,10 +252,23 @@ const Customers = () => {
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [formData, setFormData] = useState({ name: "", phone: "", email: "", address: "" });
   const [recentDays, setRecentDays] = useState(7);
-  const [activeFilter, setActiveFilter] = useState("all"); // tracking state for active context UI
+  const [activeFilter, setActiveFilter] = useState("all");
 
   const [showModal, setShowModal] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState(null);
+
+  // Reusable refresh router that keeps the active filter active after saving an update
+  const refreshCurrentView = () => {
+    if (activeFilter === "top") {
+      getTopCustomers();
+    } else if (activeFilter === "recent") {
+      getRecentCustomers();
+    } else if (activeFilter === "no-orders") {
+      getCustomersWithoutOrders();
+    } else {
+      fetchCustomers();
+    }
+  };
 
   const fetchCustomers = async () => {
     try {
@@ -264,7 +276,9 @@ const Customers = () => {
         headers: { Authorization: `Bearer ${token}` },
         params: search ? { search } : {},
       });
-      setCustomers(res.data.data.customers);
+      // Safe boundary parse if your backend structure fluctuates
+      const rawData = res.data?.data;
+      setCustomers(Array.isArray(rawData) ? rawData : rawData?.customers || []);
       setActiveFilter("all");
     } catch {
       toast.error("❌ Failed to fetch customers");
@@ -276,7 +290,7 @@ const Customers = () => {
       const res = await axios.get("/customers/analytics/top", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setCustomers(res.data.data);
+      setCustomers(res.data?.data || []);
       setActiveFilter("top");
     } catch {
       toast.error("❌ Failed to fetch top customers");
@@ -288,7 +302,7 @@ const Customers = () => {
       const res = await axios.get(`/customers/analytics/recent?days=${recentDays}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setCustomers(res.data.data);
+      setCustomers(res.data?.data || []);
       setActiveFilter("recent");
     } catch {
       toast.error("❌ Failed to fetch recent customers");
@@ -300,10 +314,10 @@ const Customers = () => {
       const res = await axios.get("/customers/analytics/no-orders", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setCustomers(res.data.data);
+      setCustomers(res.data?.data || []);
       setActiveFilter("no-orders");
     } catch {
-      toast.error("❌ Failed to fetch customers without orders");
+      toast.error("❌ Failed to fetch inactive profiles");
     }
   };
 
@@ -313,7 +327,12 @@ const Customers = () => {
 
   const handleEdit = (cust) => {
     setEditingCustomer(cust._id);
-    setFormData({ name: cust.name, phone: cust.phone, email: cust.email, address: cust.address });
+    setFormData({ 
+      name: cust.name || "", 
+      phone: cust.phone || "", 
+      email: cust.email || "", 
+      address: cust.address || "" 
+    });
   };
 
   const handleUpdate = async () => {
@@ -323,7 +342,7 @@ const Customers = () => {
       });
       toast.success("✅ Customer updated successfully");
       setEditingCustomer(null);
-      fetchCustomers();
+      refreshCurrentView(); // ⚡ FIX: Refreshes without breaking your active view arrays
     } catch {
       toast.error("❌ Update failed");
     }
@@ -342,7 +361,7 @@ const Customers = () => {
       toast.success("🗑️ Customer deleted successfully");
       setShowModal(false);
       setCustomerToDelete(null);
-      fetchCustomers();
+      refreshCurrentView();
     } catch {
       toast.error("❌ Delete failed");
     }
@@ -352,7 +371,7 @@ const Customers = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 bg-[#F8FAFC] dark:bg-slate-950 min-h-screen text-slate-900 dark:text-slate-100 transition-colors duration-200">
+    <div className="p-4 md:p-8 w-full min-h-screen bg-[#F8FAFC] dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
       <Toaster position="top-right" />
 
       {/* Header Module */}
@@ -476,7 +495,6 @@ const Customers = () => {
               ) : (
                 customers.map((cust) =>
                   editingCustomer === cust._id ? (
-                    /* Active Node Mutation Form Inline Row */
                     <tr key={cust._id} className="bg-blue-50/40 dark:bg-blue-950/10">
                       <td className="px-6 py-3 font-mono text-slate-400 dark:text-slate-500 font-medium">{cust.customerId}</td>
                       <td className="px-4 py-3">
@@ -497,13 +515,15 @@ const Customers = () => {
                       </td>
                     </tr>
                   ) : (
-                    /* Native Ledger Entry Display Row */
                     <tr key={cust._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 group transition-colors">
                       <td className="px-6 py-4 font-mono font-semibold text-xs text-slate-500 dark:text-slate-400">{cust.customerId}</td>
                       <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{cust.name}</td>
                       <td className="px-6 py-4 font-mono text-slate-600 dark:text-slate-300">{cust.phone}</td>
                       <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{cust.email}</td>
-                      <td className="px-6 py-4 max-w-xs truncate text-slate-500 dark:text-slate-400" title={cust.address}>{cust.address}</td>
+                      {/* 🏠 NATIVE TEXT RENDER FOR ADDRESS FIELD VALUE */}
+                      <td className="px-6 py-4 max-w-xs truncate text-slate-900 dark:text-slate-100 font-medium" title={cust.address || "No address filed"}>
+                        {cust.address || <span className="text-slate-400 dark:text-slate-600 italic">No Address Filed</span>}
+                      </td>
                       {user?.role === "admin" && (
                         <td className="px-6 py-4 text-right space-x-1 whitespace-nowrap opacity-90 group-hover:opacity-100 transition-opacity">
                           <button
@@ -536,7 +556,7 @@ const Customers = () => {
         <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-xl shadow-xl max-w-sm w-full space-y-4 text-center flex flex-col items-center">
             <div className="w-10 h-10 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center">
-              <FiAlertCircle size={20} />
+              <FiCircle size={20} />
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">Deprecate Record</h2>
