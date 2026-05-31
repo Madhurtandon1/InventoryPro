@@ -134,33 +134,666 @@
 //  export default Home;
 
 
+// import React, { useState, useEffect } from "react";
+// import { useNavigate } from "react-router-dom";
+// import { FiBox, FiUsers, FiFileText, FiTrendingUp, FiShield, FiZap } from "react-icons/fi";
+// import LoginModal from "./Login";
+// import Register2 from "./Register2";
+
+// const BLUE = "#155dfc";
+// const BLUE_LIGHT = "#e8effe";
+// const DARK = "#1C1C1A";
+// const CREAM = "#F5F4F1";
+// const MID = "#5F5E5A";
+// const BORDER = "#E2E0D9";
+
+// const features = [
+//   { title: "Product Management", icon: FiBox, description: "Organize your entire catalog effortlessly. Track stock levels, set reorder alerts, and stay ahead of demand — all in one place.", tag: "Inventory" },
+//   { title: "Customer Insights", icon: FiUsers, description: "Understand your buyers deeply. Monitor purchase history, preferences, and patterns to make smarter business decisions.", tag: "Analytics" },
+//   { title: "Smart Billing", icon: FiFileText, description: "Generate invoices in seconds, manage orders with ease, and keep your cash flow clean and organized.", tag: "Billing" },
+//   { title: "Sales Tracking", icon: FiTrendingUp, description: "Monitor revenue trends, top-performing products, and daily sales — visualized beautifully for quick decisions.", tag: "Reports" },
+//   { title: "Secure & Reliable", icon: FiShield, description: "Your data is encrypted and backed up automatically. We keep your business safe so you can focus on growing it.", tag: "Security" },
+//   { title: "Blazing Fast", icon: FiZap, description: "Instant search, real-time updates, and a responsive interface built for speed — because every second counts.", tag: "Performance" },
+// ];
+
+// const stats = [
+//   { value: "2,400+", label: "Businesses" },
+//   { value: "₹18Cr+", label: "Billed monthly" },
+//   { value: "99.9%", label: "Uptime" },
+//   { value: "4.9★", label: "Avg rating" },
+// ];
+
+// const Home = () => {
+//   const navigate = useNavigate();
+//   const [showLogin, setShowLogin] = useState(false);
+//   const [showRegister, setShowRegister] = useState(false);
+//   const [scrolled, setScrolled] = useState(false);
+
+//   useEffect(() => {
+//     const onScroll = () => setScrolled(window.scrollY > 10);
+//     window.addEventListener("scroll", onScroll);
+//     return () => window.removeEventListener("scroll", onScroll);
+//   }, []);
+
+//   return (
+//     <>
+//       <style>{`
+//         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=Instrument+Serif:ital@0;1&display=swap');
+
+//         .ip-page *,
+//         .ip-page *::before,
+//         .ip-page *::after { box-sizing: border-box; }
+
+//         .ip-page {
+//           width: 100%;
+//           min-height: 100vh;
+//           background: #F5F4F1;
+//           color: #1C1C1A;
+//           overflow-x: hidden;
+//         }
+
+//         /* ── NAV ── */
+//         .ip-nav {
+//           position: fixed;
+//           top: 0; left: 0; right: 0;
+//           z-index: 100;
+//           background: #2A2A28;
+//           border-bottom: 1px solid #3A3A38;
+//           transition: background 0.25s, box-shadow 0.25s;
+//         }
+//         .ip-nav.scrolled {
+//           background: #1C1C1A;
+//           box-shadow: 0 2px 20px rgba(0,0,0,0.25);
+//         }
+//         .ip-nav-inner {
+//           width: 100%;
+//           max-width: 1280px;
+//           margin: 0 auto;
+//           padding: 0 40px;
+//           height: 64px;
+//           display: flex;
+//           align-items: center;
+//           justify-content: space-between;
+//         }
+//         .ip-logo {
+//           display: flex;
+//           align-items: center;
+//           gap: 10px;
+//           text-decoration: none;
+//         }
+//         .ip-logo-icon {
+//           width: 32px; height: 32px;
+//           background: #155dfc;
+//           border-radius: 8px;
+//           display: flex;
+//           align-items: center;
+//           justify-content: center;
+//           flex-shrink: 0;
+//         }
+//         .ip-logo-box {
+//           width: 14px; height: 14px;
+//           border: 2.5px solid #fff;
+//           border-radius: 3px;
+//         }
+//         .ip-logo-text {
+//           font-size: 17px;
+//           font-weight: 600;
+//           letter-spacing: -0.02em;
+//           color: #F5F4F1;
+//         }
+//         .ip-nav-actions { display: flex; gap: 10px; align-items: center; }
+
+//         .btn-nav-login {
+//           background: transparent;
+//           border: 1.5px solid #4A4A48;
+//           color: #C5C3BB;
+//           padding: 8px 20px;
+//           border-radius: 8px;
+//           font-size: 14px;
+//           font-weight: 500;
+//           cursor: pointer;
+//           font-family: inherit;
+//           transition: border-color 0.15s, color 0.15s, background 0.15s;
+//         }
+//         .btn-nav-login:hover {
+//           border-color: #888780;
+//           color: #F5F4F1;
+//           background: #333330;
+//         }
+//         .btn-nav-cta {
+//           background: #155dfc;
+//           border: none;
+//           color: #fff;
+//           padding: 8px 20px;
+//           border-radius: 8px;
+//           font-size: 14px;
+//           font-weight: 600;
+//           cursor: pointer;
+//           font-family: inherit;
+//           transition: background 0.15s, transform 0.12s;
+//         }
+//         .btn-nav-cta:hover { background: #1a6aff; transform: translateY(-1px); }
+//         .btn-nav-cta:active { transform: translateY(0); }
+
+//         /* ── HERO (Reduced vertical padding to make it significantly smaller) ── */
+//         .ip-hero {
+//           width: 100%;
+//           padding: 95px 40px 40px;
+//           text-align: center;
+//           background: #F5F4F1;
+//         }
+//         .ip-hero-inner { max-width: 800px; margin: 0 auto; }
+
+//         .hero-badge {
+//           display: inline-flex;
+//           align-items: center;
+//           gap: 8px;
+//           background: #1C1C1A;
+//           color: #F5F4F1;
+//           font-size: 12px;
+//           font-weight: 500;
+//           letter-spacing: 0.04em;
+//           padding: 6px 16px 6px 10px;
+//           border-radius: 100px;
+//           margin-bottom: 24px;
+//         }
+//         .badge-dot {
+//           width: 7px; height: 7px;
+//           border-radius: 50%;
+//           background: #155dfc;
+//           display: inline-block;
+//           box-shadow: 0 0 0 3px rgba(21,93,252,0.2);
+//         }
+
+//         .hero-h1 {
+//           font-family: 'Instrument Serif', Georgia, serif;
+//           font-size: clamp(48px, 7.5vw, 88px);
+//           font-weight: 400;
+//           line-height: 1.06;
+//           letter-spacing: -0.025em;
+//           color: #1C1C1A;
+//           margin-bottom: 20px;
+//         }
+//         .hero-h1 em {
+//           font-style: italic;
+//           color: #155dfc;
+//         }
+
+//         .hero-sub {
+//           font-size: 18px;
+//           color: #5F5E5A;
+//           line-height: 1.65;
+//           max-width: 500px;
+//           margin: 0 auto 32px;
+//         }
+
+//         .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+//         .btn-hero-primary {
+//           background: #155dfc;
+//           color: #fff;
+//           border: none;
+//           padding: 15px 36px;
+//           border-radius: 9px;
+//           font-size: 16px;
+//           font-weight: 600;
+//           cursor: pointer;
+//           font-family: inherit;
+//           transition: background 0.15s, transform 0.12s, box-shadow 0.15s;
+//           box-shadow: 0 4px 16px rgba(21,93,252,0.3);
+//         }
+//         .btn-hero-primary:hover {
+//           background: #1a6aff;
+//           transform: translateY(-2px);
+//           box-shadow: 0 8px 24px rgba(21,93,252,0.35);
+//         }
+//         .btn-hero-primary:active { transform: translateY(0); }
+
+//         .btn-hero-ghost {
+//           background: #fff;
+//           color: #1C1C1A;
+//           border: 1.5px solid #D5D3CC;
+//           padding: 15px 36px;
+//           border-radius: 9px;
+//           font-size: 16px;
+//           font-weight: 500;
+//           cursor: pointer;
+//           font-family: inherit;
+//           transition: border-color 0.15s, background 0.15s, transform 0.12s;
+//         }
+//         .btn-hero-ghost:hover {
+//           border-color: #1C1C1A;
+//           background: #ECEAE4;
+//           transform: translateY(-2px);
+//         }
+//         .btn-hero-ghost:active { transform: translateY(0); }
+
+//         .hero-fine {
+//           margin-top: 14px;
+//           font-size: 13px;
+//           color: #888780;
+//         }
+//         .hero-fine span {
+//           color: #155dfc;
+//           font-weight: 500;
+//         }
+
+//         /* ── STATS ── */
+//         .ip-stats {
+//           width: 100%;
+//           background: #1C1C1A;
+//           padding: 52px 40px;
+//         }
+//         .ip-stats-inner {
+//           max-width: 1000px;
+//           margin: 0 auto;
+//           display: flex;
+//           gap: 0;
+//           flex-wrap: wrap;
+//           justify-content: center;
+//         }
+//         .stat-item {
+//           text-align: center;
+//           padding: 10px 48px;
+//           border-right: 1px solid #2E2E2C;
+//         }
+//         .stat-item:last-child { border-right: none; }
+//         .stat-val {
+//           font-size: 32px;
+//           font-weight: 700;
+//           color: #F5F4F1;
+//           letter-spacing: -0.03em;
+//           line-height: 1;
+//         }
+//         .stat-val .accent { color: #155dfc; }
+//         .stat-lbl {
+//           font-size: 13px;
+//           color: #888780;
+//           margin-top: 5px;
+//           font-weight: 400;
+//         }
+
+//         /* ── FEATURES ── */
+//         .ip-features {
+//           width: 100%;
+//           padding: 100px 40px;
+//           background: #F5F4F1;
+//         }
+//         .ip-features-inner { max-width: 1280px; margin: 0 auto; }
+//         .features-header { margin-bottom: 56px; }
+//         .features-label {
+//           font-size: 12px;
+//           font-weight: 600;
+//           letter-spacing: 0.1em;
+//           text-transform: uppercase;
+//           color: #155dfc;
+//           margin-bottom: 12px;
+//         }
+//         .features-h2 {
+//           font-family: 'Instrument Serif', Georgia, serif;
+//           font-size: clamp(30px, 4vw, 44px);
+//           font-weight: 400;
+//           letter-spacing: -0.02em;
+//           line-height: 1.18;
+//           color: #1C1C1A;
+//           max-width: 460px;
+//           margin-bottom: 14px;
+//         }
+//         .features-sub { font-size: 16px; color: #5F5E5A; line-height: 1.65; max-width: 420px; }
+
+//         .features-grid {
+//           display: grid;
+//           grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+//           gap: 20px;
+//         }
+
+//         .feat-card {
+//           background: #fff;
+//           border: 1px solid #E2E0D9;
+//           border-radius: 16px;
+//           padding: 28px;
+//           position: relative;
+//           overflow: hidden;
+//           transition: box-shadow 0.22s, transform 0.22s, border-color 0.22s;
+//         }
+//         .feat-card::after {
+//           content: '';
+//           position: absolute;
+//           top: 0; left: 0; right: 0;
+//           height: 3px;
+//           background: #155dfc;
+//           opacity: 0;
+//           transition: opacity 0.22s;
+//         }
+//         .feat-card:hover {
+//           box-shadow: 0 10px 36px rgba(21,93,252,0.10), 0 2px 8px rgba(0,0,0,0.06);
+//           transform: translateY(-4px);
+//           border-color: #C8D8FE;
+//         }
+//         .feat-card:hover::after { opacity: 1; }
+
+//         .feat-tag {
+//           display: inline-block;
+//           font-size: 10px;
+//           font-weight: 600;
+//           letter-spacing: 0.08em;
+//           text-transform: uppercase;
+//           color: #155dfc;
+//           background: #e8effe;
+//           padding: 3px 10px;
+//           border-radius: 100px;
+//           margin-bottom: 18px;
+//         }
+//         .feat-icon-row {
+//           display: flex;
+//           align-items: center;
+//           gap: 12px;
+//           margin-bottom: 12px;
+//         }
+//         .feat-icon-box {
+//           width: 42px; height: 42px;
+//           background: #e8effe;
+//           border-radius: 10px;
+//           display: flex;
+//           align-items: center;
+//           justify-content: center;
+//           flex-shrink: 0;
+//         }
+//         .feat-title {
+//           font-size: 16px;
+//           font-weight: 600;
+//           letter-spacing: -0.01em;
+//           color: #1C1C1A;
+//         }
+//         .feat-desc {
+//           font-size: 14px;
+//           color: #5F5E5A;
+//           line-height: 1.65;
+//         }
+
+//         /* ── CTA BAND ── */
+//         .ip-cta {
+//           width: 100%;
+//           padding: 0 40px 100px;
+//         }
+//         .ip-cta-inner {
+//           max-width: 1280px;
+//           margin: 0 auto;
+//           background: #1C1C1A;
+//           border-radius: 24px;
+//           padding: 80px 60px;
+//           text-align: center;
+//           position: relative;
+//           overflow: hidden;
+//         }
+//         .ip-cta-inner::before {
+//           content: '';
+//           position: absolute;
+//           top: -80px; left: 50%;
+//           transform: translateX(-50%);
+//           width: 500px; height: 300px;
+//           background: radial-gradient(ellipse, rgba(21,93,252,0.18) 0%, transparent 70%);
+//           pointer-events: none;
+//         }
+//         .cta-eyebrow {
+//           font-size: 12px;
+//           font-weight: 600;
+//           letter-spacing: 0.1em;
+//           text-transform: uppercase;
+//           color: #155dfc;
+//           margin-bottom: 16px;
+//         }
+//         .cta-h2 {
+//           font-family: 'Instrument Serif', Georgia, serif;
+//           font-size: clamp(30px, 4vw, 52px);
+//           font-weight: 400;
+//           color: #F5F4F1;
+//           letter-spacing: -0.02em;
+//           line-height: 1.12;
+//           margin-bottom: 32px;
+//         }
+//         .cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+//         .btn-cta-primary {
+//           background: #155dfc;
+//           color: #fff;
+//           border: none;
+//           padding: 15px 36px;
+//           border-radius: 9px;
+//           font-size: 15px;
+//           font-weight: 600;
+//           cursor: pointer;
+//           font-family: inherit;
+//           transition: background 0.15s, transform 0.12s;
+//           box-shadow: 0 4px 20px rgba(21,93,252,0.4);
+//         }
+//         .btn-cta-primary:hover { background: #1a6aff; transform: translateY(-1px); }
+//         .btn-cta-ghost {
+//           background: transparent;
+//           color: #C5C3BB;
+//           border: 1.5px solid #3A3A38;
+//           padding: 15px 36px;
+//           border-radius: 9px;
+//           font-size: 15px;
+//           font-weight: 500;
+//           cursor: pointer;
+//           font-family: inherit;
+//           transition: border-color 0.15s, color 0.15s;
+//         }
+//         .btn-cta-ghost:hover { border-color: #888780; color: #F5F4F1; }
+
+//         /* ── FOOTER ── */
+//         .ip-footer {
+//           width: 100%;
+//           border-top: 1px solid #E2E0D9;
+//           padding: 40px;
+//           background: #F5F4F1;
+//         }
+//         .ip-footer-inner {
+//           max-width: 1280px;
+//           margin: 0 auto;
+//         }
+//         .footer-top {
+//           display: flex;
+//           justify-content: space-between;
+//           align-items: center;
+//           flex-wrap: wrap;
+//           gap: 20px;
+//           margin-bottom: 24px;
+//           padding-bottom: 24px;
+//           border-bottom: 1px solid #ECEAE4;
+//         }
+//         .footer-logo {
+//           display: flex;
+//           align-items: center;
+//           gap: 9px;
+//         }
+//         .footer-logo-icon {
+//           width: 28px; height: 28px;
+//           background: #155dfc;
+//           border-radius: 7px;
+//           display: flex;
+//           align-items: center;
+//           justify-content: center;
+//         }
+//         .footer-logo-box {
+//           width: 12px; height: 12px;
+//           border: 2px solid #fff;
+//           border-radius: 2px;
+//         }
+//         .footer-logo-text {
+//           font-size: 15px;
+//           font-weight: 600;
+//           letter-spacing: -0.02em;
+//           color: #1C1C1A;
+//         }
+//         .footer-contacts { display: flex; gap: 28px; flex-wrap: wrap; align-items: center; }
+//         .footer-link {
+//           color: #5F5E5A;
+//           text-decoration: none;
+//           font-size: 14px;
+//           transition: color 0.15s;
+//         }
+//         .footer-link:hover { color: #155dfc; }
+//         .footer-bottom {
+//           display: flex;
+//           justify-content: space-between;
+//           align-items: center;
+//           flex-wrap: wrap;
+//           gap: 8px;
+//         }
+//         .footer-copy { font-size: 13px; color: #888780; }
+//         .footer-tag { font-size: 13px; color: #B4B2A9; }
+//       `}</style>
+
+//       {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+//       {showRegister && (
+//         <Register2
+//           onClose={() => setShowRegister(false)}
+//           openLogin={() => { setShowRegister(false); setShowLogin(true); }}
+//         />
+//       )}
+
+//       <div className="ip-page">
+
+//         {/* NAV */}
+//         <nav className={`ip-nav${scrolled ? " scrolled" : ""}`}>
+//           <div className="ip-nav-inner">
+//             <div className="ip-logo">
+//               <div className="ip-logo-icon"><div className="ip-logo-box" /></div>
+//               <span className="ip-logo-text">InventoryPro</span>
+//             </div>
+//             <div className="ip-nav-actions">
+//               <button className="btn-nav-login" onClick={() => setShowLogin(true)}>Log in</button>
+//               <button className="btn-nav-cta" onClick={() => setShowRegister(true)}>Get started →</button>
+//             </div>
+//           </div>
+//         </nav>
+
+//         {/* HERO */}
+//         <section className="ip-hero">
+//           <div className="ip-hero-inner">
+//             <div className="hero-badge">
+//               <span className="badge-dot" />
+//               Now live · Trusted by 2,400+ businesses
+//             </div>
+//             <h1 className="hero-h1">
+//               Manage smarter,<br />
+//               <em>not harder.</em>
+//             </h1>
+//             <p className="hero-sub">
+//               InventoryPro gives small businesses beautiful, simple tools to manage products, orders, and customers — from one clean platform.
+//             </p>
+//             <div className="hero-actions">
+//               <button className="btn-hero-primary" onClick={() => setShowRegister(true)}>Start for free</button>
+//               <button className="btn-hero-ghost" onClick={() => setShowLogin(true)}>Demo login</button>
+//             </div>
+//             <p className="hero-fine">No credit card required · <span>Setup in 2 minutes</span></p>
+//           </div>
+//         </section>
+
+//         {/* STATS */}
+//         <section className="ip-stats">
+//           <div className="ip-stats-inner">
+//             {stats.map((s, i) => (
+//               <div key={i} className="stat-item">
+//                 <div className="stat-val">{s.value}</div>
+//                 <div className="stat-lbl">{s.label}</div>
+//               </div>
+//             ))}
+//           </div>
+//         </section>
+
+//         {/* FEATURES */}
+//         <section className="ip-features">
+//           <div className="ip-features-inner">
+//             <div className="features-header">
+//               <p className="features-label">Features</p>
+//               <h2 className="features-h2">Everything you need, nothing you don't.</h2>
+//               <p className="features-sub">Six core tools designed to run your inventory end-to-end — no complexity, no bloat.</p>
+//             </div>
+//             <div className="features-grid">
+//               {features.map((f, i) => {
+//                 const Icon = f.icon;
+//                 return (
+//                   <div key={i} className="feat-card">
+//                     <span className="feat-tag">{f.tag}</span>
+//                     <div className="feat-icon-row">
+//                       <div className="feat-icon-box">
+//                         <Icon size={19} color={BLUE} />
+//                       </div>
+//                       <span className="feat-title">{f.title}</span>
+//                     </div>
+//                     <p className="feat-desc">{f.description}</p>
+//                   </div>
+//                 );
+//               })}
+//             </div>
+//           </div>
+//         </section>
+
+//         {/* CTA */}
+//         <section className="ip-cta">
+//           <div className="ip-cta-inner">
+//             <p className="cta-eyebrow">Ready to get started?</p>
+//             <h2 className="cta-h2">Your inventory, finally<br />under control.</h2>
+//             <div className="cta-actions">
+//               <button className="btn-cta-primary" onClick={() => setShowRegister(true)}>Create free account</button>
+//               <button className="btn-cta-ghost" onClick={() => setShowLogin(true)}>Demo login</button>
+//             </div>
+//           </div>
+//         </section>
+
+//         {/* FOOTER */}
+//         <footer className="ip-footer">
+//           <div className="ip-footer-inner">
+//             <div className="footer-top">
+//               <div className="footer-logo">
+//                 <div className="footer-logo-icon"><div className="footer-logo-box" /></div>
+//                 <span className="footer-logo-text">InventoryPro</span>
+//               </div>
+//               <div className="footer-contacts">
+//                 <a href="tel:+919336702981" className="footer-link">📞 +91 93367 02981</a>
+//                 <a href="mailto:inventorypro25@gmail.com" className="footer-link">✉ inventorypro25@gmail.com</a>
+//               </div>
+//             </div>
+//             <div className="footer-bottom">
+//               <p className="footer-copy">© {new Date().getFullYear()} InventoryPro. Built with ❤️ for small businesses.</p>
+//               <p className="footer-tag">Manage smarter.</p>
+//             </div>
+//           </div>
+//         </footer>
+
+//       </div>
+//     </>
+//   );
+// };
+
+// export default Home;
+
+
+
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiBox, FiUsers, FiFileText, FiTrendingUp, FiShield, FiZap } from "react-icons/fi";
+import { FiBox, FiUsers, FiFileText, FiTrendingUp, FiShield, FiZap, FiArrowRight, FiActivity } from "react-icons/fi";
 import LoginModal from "./Login";
 import Register2 from "./Register2";
 
-const BLUE = "#155dfc";
-const BLUE_LIGHT = "#e8effe";
-const DARK = "#1C1C1A";
-const CREAM = "#F5F4F1";
-const MID = "#5F5E5A";
-const BORDER = "#E2E0D9";
-
 const features = [
-  { title: "Product Management", icon: FiBox, description: "Organize your entire catalog effortlessly. Track stock levels, set reorder alerts, and stay ahead of demand — all in one place.", tag: "Inventory" },
-  { title: "Customer Insights", icon: FiUsers, description: "Understand your buyers deeply. Monitor purchase history, preferences, and patterns to make smarter business decisions.", tag: "Analytics" },
-  { title: "Smart Billing", icon: FiFileText, description: "Generate invoices in seconds, manage orders with ease, and keep your cash flow clean and organized.", tag: "Billing" },
-  { title: "Sales Tracking", icon: FiTrendingUp, description: "Monitor revenue trends, top-performing products, and daily sales — visualized beautifully for quick decisions.", tag: "Reports" },
-  { title: "Secure & Reliable", icon: FiShield, description: "Your data is encrypted and backed up automatically. We keep your business safe so you can focus on growing it.", tag: "Security" },
-  { title: "Blazing Fast", icon: FiZap, description: "Instant search, real-time updates, and a responsive interface built for speed — because every second counts.", tag: "Performance" },
+  { title: "Product Management", icon: FiBox, description: "Organize your entire catalog effortlessly. Track stock levels and stay ahead of demand.", tag: "Inventory" },
+  { title: "Customer Insights", icon: FiUsers, description: "Understand your buyers deeply. Monitor purchase history and preferences easily.", tag: "Profiles" },
+  { title: "Smart Billing", icon: FiFileText, description: "Generate invoices in seconds, manage orders, and keep your cash flow organized.", tag: "Billing" },
+  { title: "Sales Tracking", icon: FiTrendingUp, description: "Monitor revenue trends, top-performing products, and daily sales instantly.", tag: "Reports" },
+  { title: "Secure & Reliable", icon: FiShield, description: "Your shop data is fully encrypted and safe so you can focus entirely on growing.", tag: "Security" },
+  { title: "Blazing Fast", icon: FiZap, description: "Instant search, real-time updates, and a clean interface built for real shop environments.", tag: "Performance" },
 ];
 
 const stats = [
-  { value: "2,400+", label: "Businesses" },
-  { value: "₹18Cr+", label: "Billed monthly" },
-  { value: "99.9%", label: "Uptime" },
-  { value: "4.9★", label: "Avg rating" },
+  { value: "2,400+", label: "Active Shops Logged" },
+  { value: "₹18Cr+", label: "Billed This Month" },
+  { value: "99.9%", label: "Network Uptime" },
+  { value: "4.9★", label: "User Satisfaction" },
 ];
 
 const Home = () => {
@@ -178,589 +811,208 @@ const Home = () => {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=Instrument+Serif:ital@0;1&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
-        .ip-page *,
-        .ip-page *::before,
-        .ip-page *::after { box-sizing: border-box; }
-
-        .ip-page {
-          width: 100%;
+        .ip-global-wrapper {
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          background-color: #F8FAFC; /* Light gray background */
+          color: #0f172a; /* Dark slate text */
           min-height: 100vh;
-          background: #F5F4F1;
-          color: #1C1C1A;
-          overflow-x: hidden;
         }
-
-        /* ── NAV ── */
-        .ip-nav {
-          position: fixed;
-          top: 0; left: 0; right: 0;
-          z-index: 100;
-          background: #2A2A28;
-          border-bottom: 1px solid #3A3A38;
-          transition: background 0.25s, box-shadow 0.25s;
+        
+        .ip-global-wrapper::-webkit-scrollbar {
+          width: 8px;
         }
-        .ip-nav.scrolled {
-          background: #1C1C1A;
-          box-shadow: 0 2px 20px rgba(0,0,0,0.25);
+        .ip-global-wrapper::-webkit-scrollbar-track {
+          background: #F8FAFC;
         }
-        .ip-nav-inner {
-          width: 100%;
-          max-width: 1280px;
-          margin: 0 auto;
-          padding: 0 40px;
-          height: 64px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
+        .ip-global-wrapper::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 4px;
         }
-        .ip-logo {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          text-decoration: none;
-        }
-        .ip-logo-icon {
-          width: 32px; height: 32px;
-          background: #155dfc;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-        .ip-logo-box {
-          width: 14px; height: 14px;
-          border: 2.5px solid #fff;
-          border-radius: 3px;
-        }
-        .ip-logo-text {
-          font-size: 17px;
-          font-weight: 600;
-          letter-spacing: -0.02em;
-          color: #F5F4F1;
-        }
-        .ip-nav-actions { display: flex; gap: 10px; align-items: center; }
-
-        .btn-nav-login {
-          background: transparent;
-          border: 1.5px solid #4A4A48;
-          color: #C5C3BB;
-          padding: 8px 20px;
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: 500;
-          cursor: pointer;
-          font-family: inherit;
-          transition: border-color 0.15s, color 0.15s, background 0.15s;
-        }
-        .btn-nav-login:hover {
-          border-color: #888780;
-          color: #F5F4F1;
-          background: #333330;
-        }
-        .btn-nav-cta {
-          background: #155dfc;
-          border: none;
-          color: #fff;
-          padding: 8px 20px;
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: 600;
-          cursor: pointer;
-          font-family: inherit;
-          transition: background 0.15s, transform 0.12s;
-        }
-        .btn-nav-cta:hover { background: #1a6aff; transform: translateY(-1px); }
-        .btn-nav-cta:active { transform: translateY(0); }
-
-        /* ── HERO (Reduced vertical padding to make it significantly smaller) ── */
-        .ip-hero {
-          width: 100%;
-          padding: 95px 40px 40px;
-          text-align: center;
-          background: #F5F4F1;
-        }
-        .ip-hero-inner { max-width: 800px; margin: 0 auto; }
-
-        .hero-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          background: #1C1C1A;
-          color: #F5F4F1;
-          font-size: 12px;
-          font-weight: 500;
-          letter-spacing: 0.04em;
-          padding: 6px 16px 6px 10px;
-          border-radius: 100px;
-          margin-bottom: 24px;
-        }
-        .badge-dot {
-          width: 7px; height: 7px;
-          border-radius: 50%;
-          background: #155dfc;
-          display: inline-block;
-          box-shadow: 0 0 0 3px rgba(21,93,252,0.2);
-        }
-
-        .hero-h1 {
-          font-family: 'Instrument Serif', Georgia, serif;
-          font-size: clamp(48px, 7.5vw, 88px);
-          font-weight: 400;
-          line-height: 1.06;
-          letter-spacing: -0.025em;
-          color: #1C1C1A;
-          margin-bottom: 20px;
-        }
-        .hero-h1 em {
-          font-style: italic;
-          color: #155dfc;
-        }
-
-        .hero-sub {
-          font-size: 18px;
-          color: #5F5E5A;
-          line-height: 1.65;
-          max-width: 500px;
-          margin: 0 auto 32px;
-        }
-
-        .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-
-        .btn-hero-primary {
-          background: #155dfc;
-          color: #fff;
-          border: none;
-          padding: 15px 36px;
-          border-radius: 9px;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          font-family: inherit;
-          transition: background 0.15s, transform 0.12s, box-shadow 0.15s;
-          box-shadow: 0 4px 16px rgba(21,93,252,0.3);
-        }
-        .btn-hero-primary:hover {
-          background: #1a6aff;
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(21,93,252,0.35);
-        }
-        .btn-hero-primary:active { transform: translateY(0); }
-
-        .btn-hero-ghost {
-          background: #fff;
-          color: #1C1C1A;
-          border: 1.5px solid #D5D3CC;
-          padding: 15px 36px;
-          border-radius: 9px;
-          font-size: 16px;
-          font-weight: 500;
-          cursor: pointer;
-          font-family: inherit;
-          transition: border-color 0.15s, background 0.15s, transform 0.12s;
-        }
-        .btn-hero-ghost:hover {
-          border-color: #1C1C1A;
-          background: #ECEAE4;
-          transform: translateY(-2px);
-        }
-        .btn-hero-ghost:active { transform: translateY(0); }
-
-        .hero-fine {
-          margin-top: 14px;
-          font-size: 13px;
-          color: #888780;
-        }
-        .hero-fine span {
-          color: #155dfc;
-          font-weight: 500;
-        }
-
-        /* ── STATS ── */
-        .ip-stats {
-          width: 100%;
-          background: #1C1C1A;
-          padding: 52px 40px;
-        }
-        .ip-stats-inner {
-          max-width: 1000px;
-          margin: 0 auto;
-          display: flex;
-          gap: 0;
-          flex-wrap: wrap;
-          justify-content: center;
-        }
-        .stat-item {
-          text-align: center;
-          padding: 10px 48px;
-          border-right: 1px solid #2E2E2C;
-        }
-        .stat-item:last-child { border-right: none; }
-        .stat-val {
-          font-size: 32px;
-          font-weight: 700;
-          color: #F5F4F1;
-          letter-spacing: -0.03em;
-          line-height: 1;
-        }
-        .stat-val .accent { color: #155dfc; }
-        .stat-lbl {
-          font-size: 13px;
-          color: #888780;
-          margin-top: 5px;
-          font-weight: 400;
-        }
-
-        /* ── FEATURES ── */
-        .ip-features {
-          width: 100%;
-          padding: 100px 40px;
-          background: #F5F4F1;
-        }
-        .ip-features-inner { max-width: 1280px; margin: 0 auto; }
-        .features-header { margin-bottom: 56px; }
-        .features-label {
-          font-size: 12px;
-          font-weight: 600;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          color: #155dfc;
-          margin-bottom: 12px;
-        }
-        .features-h2 {
-          font-family: 'Instrument Serif', Georgia, serif;
-          font-size: clamp(30px, 4vw, 44px);
-          font-weight: 400;
-          letter-spacing: -0.02em;
-          line-height: 1.18;
-          color: #1C1C1A;
-          max-width: 460px;
-          margin-bottom: 14px;
-        }
-        .features-sub { font-size: 16px; color: #5F5E5A; line-height: 1.65; max-width: 420px; }
-
-        .features-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-          gap: 20px;
-        }
-
-        .feat-card {
-          background: #fff;
-          border: 1px solid #E2E0D9;
-          border-radius: 16px;
-          padding: 28px;
-          position: relative;
-          overflow: hidden;
-          transition: box-shadow 0.22s, transform 0.22s, border-color 0.22s;
-        }
-        .feat-card::after {
-          content: '';
-          position: absolute;
-          top: 0; left: 0; right: 0;
-          height: 3px;
-          background: #155dfc;
-          opacity: 0;
-          transition: opacity 0.22s;
-        }
-        .feat-card:hover {
-          box-shadow: 0 10px 36px rgba(21,93,252,0.10), 0 2px 8px rgba(0,0,0,0.06);
-          transform: translateY(-4px);
-          border-color: #C8D8FE;
-        }
-        .feat-card:hover::after { opacity: 1; }
-
-        .feat-tag {
-          display: inline-block;
-          font-size: 10px;
-          font-weight: 600;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          color: #155dfc;
-          background: #e8effe;
-          padding: 3px 10px;
-          border-radius: 100px;
-          margin-bottom: 18px;
-        }
-        .feat-icon-row {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 12px;
-        }
-        .feat-icon-box {
-          width: 42px; height: 42px;
-          background: #e8effe;
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-        .feat-title {
-          font-size: 16px;
-          font-weight: 600;
-          letter-spacing: -0.01em;
-          color: #1C1C1A;
-        }
-        .feat-desc {
-          font-size: 14px;
-          color: #5F5E5A;
-          line-height: 1.65;
-        }
-
-        /* ── CTA BAND ── */
-        .ip-cta {
-          width: 100%;
-          padding: 0 40px 100px;
-        }
-        .ip-cta-inner {
-          max-width: 1280px;
-          margin: 0 auto;
-          background: #1C1C1A;
-          border-radius: 24px;
-          padding: 80px 60px;
-          text-align: center;
-          position: relative;
-          overflow: hidden;
-        }
-        .ip-cta-inner::before {
-          content: '';
-          position: absolute;
-          top: -80px; left: 50%;
-          transform: translateX(-50%);
-          width: 500px; height: 300px;
-          background: radial-gradient(ellipse, rgba(21,93,252,0.18) 0%, transparent 70%);
-          pointer-events: none;
-        }
-        .cta-eyebrow {
-          font-size: 12px;
-          font-weight: 600;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          color: #155dfc;
-          margin-bottom: 16px;
-        }
-        .cta-h2 {
-          font-family: 'Instrument Serif', Georgia, serif;
-          font-size: clamp(30px, 4vw, 52px);
-          font-weight: 400;
-          color: #F5F4F1;
-          letter-spacing: -0.02em;
-          line-height: 1.12;
-          margin-bottom: 32px;
-        }
-        .cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-
-        .btn-cta-primary {
-          background: #155dfc;
-          color: #fff;
-          border: none;
-          padding: 15px 36px;
-          border-radius: 9px;
-          font-size: 15px;
-          font-weight: 600;
-          cursor: pointer;
-          font-family: inherit;
-          transition: background 0.15s, transform 0.12s;
-          box-shadow: 0 4px 20px rgba(21,93,252,0.4);
-        }
-        .btn-cta-primary:hover { background: #1a6aff; transform: translateY(-1px); }
-        .btn-cta-ghost {
-          background: transparent;
-          color: #C5C3BB;
-          border: 1.5px solid #3A3A38;
-          padding: 15px 36px;
-          border-radius: 9px;
-          font-size: 15px;
-          font-weight: 500;
-          cursor: pointer;
-          font-family: inherit;
-          transition: border-color 0.15s, color 0.15s;
-        }
-        .btn-cta-ghost:hover { border-color: #888780; color: #F5F4F1; }
-
-        /* ── FOOTER ── */
-        .ip-footer {
-          width: 100%;
-          border-top: 1px solid #E2E0D9;
-          padding: 40px;
-          background: #F5F4F1;
-        }
-        .ip-footer-inner {
-          max-width: 1280px;
-          margin: 0 auto;
-        }
-        .footer-top {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 20px;
-          margin-bottom: 24px;
-          padding-bottom: 24px;
-          border-bottom: 1px solid #ECEAE4;
-        }
-        .footer-logo {
-          display: flex;
-          align-items: center;
-          gap: 9px;
-        }
-        .footer-logo-icon {
-          width: 28px; height: 28px;
-          background: #155dfc;
-          border-radius: 7px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .footer-logo-box {
-          width: 12px; height: 12px;
-          border: 2px solid #fff;
-          border-radius: 2px;
-        }
-        .footer-logo-text {
-          font-size: 15px;
-          font-weight: 600;
-          letter-spacing: -0.02em;
-          color: #1C1C1A;
-        }
-        .footer-contacts { display: flex; gap: 28px; flex-wrap: wrap; align-items: center; }
-        .footer-link {
-          color: #5F5E5A;
-          text-decoration: none;
-          font-size: 14px;
-          transition: color 0.15s;
-        }
-        .footer-link:hover { color: #155dfc; }
-        .footer-bottom {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 8px;
-        }
-        .footer-copy { font-size: 13px; color: #888780; }
-        .footer-tag { font-size: 13px; color: #B4B2A9; }
       `}</style>
 
-      {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
-      {showRegister && (
-        <Register2
-          onClose={() => setShowRegister(false)}
-          openLogin={() => { setShowRegister(false); setShowLogin(true); }}
-        />
-      )}
+      <div className="ip-global-wrapper selection:bg-blue-600/20 selection:text-blue-600">
+        
+        {/* MODAL CONFIGURATIONS */}
+        {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+        {showRegister && (
+          <Register2
+            onClose={() => setShowRegister(false)}
+            openLogin={() => { setShowRegister(false); setShowLogin(true); }}
+          />
+        )}
 
-      <div className="ip-page">
-
-        {/* NAV */}
-        <nav className={`ip-nav${scrolled ? " scrolled" : ""}`}>
-          <div className="ip-nav-inner">
-            <div className="ip-logo">
-              <div className="ip-logo-icon"><div className="ip-logo-box" /></div>
-              <span className="ip-logo-text">InventoryPro</span>
+        {/* NAVIGATION BAR */}
+        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b ${
+          scrolled 
+            ? "bg-slate-900/95 backdrop-blur-md border-slate-800 shadow-xl" 
+            : "bg-slate-900 border-slate-800"
+        }`}>
+          <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/20">
+                I
+              </div>
+              <span className="font-extrabold text-lg tracking-tight text-white">
+                Inventory<span className="text-blue-500">Pro</span>
+              </span>
             </div>
-            <div className="ip-nav-actions">
-              <button className="btn-nav-login" onClick={() => setShowLogin(true)}>Log in</button>
-              <button className="btn-nav-cta" onClick={() => setShowRegister(true)}>Get started →</button>
+            
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setShowLogin(true)}
+                className="text-slate-300 hover:text-white font-semibold text-sm px-4 py-2 rounded-xl transition-all"
+              >
+                Log in
+              </button>
+              <button 
+                onClick={() => setShowRegister(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-4 py-2 rounded-xl shadow-lg shadow-blue-600/20 transition-all active:scale-95 flex items-center gap-1"
+              >
+                <span>Get Started</span>
+                <FiArrowRight size={14} />
+              </button>
             </div>
           </div>
         </nav>
 
-        {/* HERO */}
-        <section className="ip-hero">
-          <div className="ip-hero-inner">
-            <div className="hero-badge">
-              <span className="badge-dot" />
-              Now live · Trusted by 2,400+ businesses
+        {/* HERO SECTION */}
+        <section className="relative pt-32 pb-16 md:pt-40 md:pb-24 overflow-hidden bg-white border-b border-slate-200">
+          {/* Soft blue glow effect behind text */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[250px] bg-blue-500/[0.06] blur-[100px] pointer-events-none rounded-full" />
+          
+          <div className="max-w-4xl mx-auto px-6 text-center space-y-6 relative">
+            <div className="inline-flex items-center gap-2 bg-slate-100 border border-slate-200 text-slate-600 text-xs font-bold px-3 py-1.5 rounded-full">
+              <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+              <span>Trusted by 2,400+ local shop owners</span>
             </div>
-            <h1 className="hero-h1">
-              Manage smarter,<br />
-              <em>not harder.</em>
+
+            <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.1] max-w-3xl mx-auto">
+              Manage your shop smarter, <br />
+              <span className="text-blue-600">not harder.</span>
             </h1>
-            <p className="hero-sub">
-              InventoryPro gives small businesses beautiful, simple tools to manage products, orders, and customers — from one clean platform.
+
+            <p className="text-sm sm:text-base text-slate-500 max-w-xl mx-auto leading-relaxed font-medium">
+              InventoryPro gives shopkeepers clean, everyday tools to handle billing, track warehouse products, and analyze customer totals without the complex bloat.
             </p>
-            <div className="hero-actions">
-              <button className="btn-hero-primary" onClick={() => setShowRegister(true)}>Start for free</button>
-              <button className="btn-hero-ghost" onClick={() => setShowLogin(true)}>Demo login</button>
+
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button 
+                onClick={() => setShowRegister(true)}
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-8 py-3.5 rounded-xl shadow-lg shadow-blue-600/20 transition-all active:scale-[0.98]"
+              >
+                Register My Shop
+              </button>
+              <button 
+                onClick={() => setShowLogin(true)}
+                className="w-full sm:w-auto bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold text-sm px-8 py-3.5 rounded-xl transition-all active:scale-[0.98]"
+              >
+                Explore Demo Login
+              </button>
             </div>
-            <p className="hero-fine">No credit card required · <span>Setup in 2 minutes</span></p>
+
+            <p className="text-xs text-slate-400 font-semibold">No credit card needed • Setup complete in 2 minutes</p>
           </div>
         </section>
 
-        {/* STATS */}
-        <section className="ip-stats">
-          <div className="ip-stats-inner">
-            {stats.map((s, i) => (
-              <div key={i} className="stat-item">
-                <div className="stat-val">{s.value}</div>
-                <div className="stat-lbl">{s.label}</div>
-              </div>
-            ))}
+        {/* METRICS / STATS BAND */}
+        <section className="bg-slate-900 text-white shadow-md">
+          <div className="max-w-6xl mx-auto px-6 py-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-800">
+              {stats.map((s, i) => (
+                <div key={i} className="text-center md:first:pt-0 pt-4 md:pt-0">
+                  <div className="text-2xl md:text-3xl font-black text-white tracking-tight">{s.value}</div>
+                  <div className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">{s.label}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
-        {/* FEATURES */}
-        <section className="ip-features">
-          <div className="ip-features-inner">
-            <div className="features-header">
-              <p className="features-label">Features</p>
-              <h2 className="features-h2">Everything you need, nothing you don't.</h2>
-              <p className="features-sub">Six core tools designed to run your inventory end-to-end — no complexity, no bloat.</p>
+        {/* CORE UTILITIES / FEATURES SECTION */}
+        <section className="py-16 max-w-7xl mx-auto px-6">
+          <div className="mb-10 text-center sm:text-left flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 border-b border-slate-200 pb-5">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-widest text-blue-600 flex items-center justify-center sm:justify-start gap-1.5 mb-1.5">
+                <FiActivity /> System Modules
+              </span>
+              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900">Everything your shop needs.</h2>
             </div>
-            <div className="features-grid">
-              {features.map((f, i) => {
-                const Icon = f.icon;
-                return (
-                  <div key={i} className="feat-card">
-                    <span className="feat-tag">{f.tag}</span>
-                    <div className="feat-icon-row">
-                      <div className="feat-icon-box">
-                        <Icon size={19} color={BLUE} />
-                      </div>
-                      <span className="feat-title">{f.title}</span>
+            <p className="text-sm text-slate-500 max-w-sm sm:text-right leading-relaxed font-medium">
+              Six straightforward manager modules crafted specifically for local retail and stock inventory tracking.
+            </p>
+          </div>
+
+          {/* Cards look identical to internal cards now */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {features.map((f, i) => {
+              const Icon = f.icon;
+              return (
+                <div key={i} className="bg-white border border-slate-200 hover:border-blue-500 p-6 rounded-2xl shadow-sm transition-all duration-200 hover:shadow-md group">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-blue-600 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all duration-200">
+                      <Icon size={18} />
                     </div>
-                    <p className="feat-desc">{f.description}</p>
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
+                      {f.tag}
+                    </span>
                   </div>
-                );
-              })}
+                  <h3 className="text-base font-bold text-slate-900 mb-1 tracking-tight">{f.title}</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed font-medium">{f.description}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* CTA CALL OUT BAND */}
+        <section className="px-6 pb-20">
+          <div className="max-w-5xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-8 md:p-12 text-center relative overflow-hidden shadow-xl">
+            <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[400px] h-[200px] bg-blue-600/10 blur-[80px] pointer-events-none rounded-full" />
+            
+            <span className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-2 inline-block">Ready to transition?</span>
+            <h2 className="text-2xl md:text-4xl font-extrabold text-white tracking-tight leading-tight mb-4">
+              Get your shop ledger <br />completely under control.
+            </h2>
+            <p className="text-xs md:text-sm text-slate-400 max-w-md mx-auto mb-6 leading-relaxed font-medium">
+              Join thousands of businesses streamlining stock balances and active client files with automated computing.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-3">
+              <button 
+                onClick={() => setShowRegister(true)}
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-6 py-3 rounded-xl transition-all shadow-md active:scale-95"
+              >
+                Create Free Owner Account
+              </button>
+              <button 
+                onClick={() => setShowLogin(true)}
+                className="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-sm px-6 py-3 rounded-xl transition-all active:scale-95"
+              >
+                Operator Login
+              </button>
             </div>
           </div>
         </section>
 
-        {/* CTA */}
-        <section className="ip-cta">
-          <div className="ip-cta-inner">
-            <p className="cta-eyebrow">Ready to get started?</p>
-            <h2 className="cta-h2">Your inventory, finally<br />under control.</h2>
-            <div className="cta-actions">
-              <button className="btn-cta-primary" onClick={() => setShowRegister(true)}>Create free account</button>
-              <button className="btn-cta-ghost" onClick={() => setShowLogin(true)}>Demo login</button>
+        {/* SYSTEM FOOTER */}
+        <footer className="border-t border-slate-200 bg-white py-8 px-6 text-sm text-slate-500">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">I</div>
+              <span className="font-extrabold text-slate-900 text-sm">Inventory<span className="text-blue-600">Pro</span></span>
+            </div>
+            
+            <div className="flex items-center gap-6 font-semibold text-xs text-slate-600">
+              <a href="tel:+919336702981" className="hover:text-blue-600 transition-colors">📞 +91 93367 02981</a>
+              <a href="mailto:inventorypro25@gmail.com" className="hover:text-blue-600 transition-colors">✉️ inventorypro25@gmail.com</a>
             </div>
           </div>
-        </section>
-
-        {/* FOOTER */}
-        <footer className="ip-footer">
-          <div className="ip-footer-inner">
-            <div className="footer-top">
-              <div className="footer-logo">
-                <div className="footer-logo-icon"><div className="footer-logo-box" /></div>
-                <span className="footer-logo-text">InventoryPro</span>
-              </div>
-              <div className="footer-contacts">
-                <a href="tel:+919336702981" className="footer-link">📞 +91 93367 02981</a>
-                <a href="mailto:inventorypro25@gmail.com" className="footer-link">✉ inventorypro25@gmail.com</a>
-              </div>
-            </div>
-            <div className="footer-bottom">
-              <p className="footer-copy">© {new Date().getFullYear()} InventoryPro. Built with ❤️ for small businesses.</p>
-              <p className="footer-tag">Manage smarter.</p>
-            </div>
+          
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 border-t border-slate-100 mt-6 pt-6 text-xs">
+            <p>© {new Date().getFullYear()} InventoryPro. Built with ❤️ for retail businesses.</p>
+            <p className="font-bold tracking-wider uppercase text-[10px] text-slate-400">Scale Smarter.</p>
           </div>
         </footer>
 
