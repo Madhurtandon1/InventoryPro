@@ -121,7 +121,6 @@
 
 
 
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "../utils/axios.js";
@@ -139,6 +138,8 @@ const EditCustomer = () => {
     address: "",
   });
 
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     const fetchCustomer = async () => {
       try {
@@ -149,12 +150,11 @@ const EditCustomer = () => {
           },
         });
 
-        // Safe fallback assignment for nested data architecture structures
         setForm({
-          name: res.data.data.name || "",
-          phone: res.data.data.phone || "",
-          email: res.data.data.email || "",
-          address: res.data.data.address || "",
+          name: res.data?.data?.name || "",
+          phone: res.data?.data?.phone || "",
+          email: res.data?.data?.email || "",
+          address: res.data?.data?.address || "",
         });
       } catch (error) {
         toast.error("Failed to load customer profile details");
@@ -171,10 +171,15 @@ const EditCustomer = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
     try {
       const token = localStorage.getItem("token");
-      await axios.put(`/api/v1/customers/${customerId}`, form, {
+      
+      /* FIXED ROUTE ENVELOPE: 
+         Removed '/api/v1' duplication to match your backend expectations 
+      */
+      await axios.put(`/customers/${customerId}`, form, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -183,12 +188,15 @@ const EditCustomer = () => {
       toast.success("Customer updated successfully!");
       navigate("/customers");
     } catch (error) {
+      console.error("Update request error telemetry:", error);
       toast.error(error?.response?.data?.message || "Failed to update record");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto min-h-screen bg-[#F8FAFC] dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
+    <div className="p-4 md:p-8 w-full min-h-screen bg-[#F8FAFC] dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
       
       {/* Header Element Group */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-5 border-b border-slate-200 dark:border-slate-800 gap-4 mb-6">
@@ -211,7 +219,7 @@ const EditCustomer = () => {
       </div>
 
       {/* Main Core Form Card Wrapper */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm max-w-4xl">
         <form onSubmit={handleSubmit} className="space-y-6">
           
           {/* Section Indicator Label */}
@@ -282,9 +290,11 @@ const EditCustomer = () => {
           <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800/80">
             <button
               type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-6 py-2.5 rounded-xl shadow-lg shadow-blue-500/10 flex items-center gap-2 transition-all duration-150 active:scale-[0.98]"
+              disabled={loading}
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold text-sm px-6 py-2.5 rounded-xl shadow-lg shadow-blue-500/10 flex items-center gap-2 transition-all duration-150 active:scale-[0.98]"
             >
-              <FiCheckCircle size={16} /> Update Customer Record
+              <FiCheckCircle size={16} /> 
+              <span>{loading ? "Updating Account Node..." : "Update Customer Record"}</span>
             </button>
           </div>
         </form>
