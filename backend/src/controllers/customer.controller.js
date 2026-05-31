@@ -344,32 +344,89 @@ export const getOrdersByCustomer = asyncHandler(async (req, res) => {
 //   await customerExists.save();
 //   res.status(200).json(new ApiResponse(200, customerExists, "Customer updated"));
 // });
-export const updateCustomer = asyncHandler(async (req, res) => {
+// export const updateCustomer = asyncHandler(async (req, res) => {
 
+//   const ownerId = getOwnerId(req.user);
+//   const { customerId } = req.params;
+
+//   const { name, phone, email, address } = req.body;
+
+//   // Build update object dynamically
+//   const updateFields = {};
+
+//   if (name?.trim()) updateFields.name = name.trim();
+//   if (phone) updateFields.phone = phone;
+//   if (email) updateFields.email = email;
+//   if (address) updateFields.address = address;
+
+//   // Update customer
+//   const updatedCustomer = await Customer.findOneAndUpdate(
+//     {
+//       _id: customerId,
+//       createdBy: ownerId,
+//     },
+//     {
+//       $set: updateFields,
+//     },
+//     {
+//       new: true,
+//       runValidators: true,
+//     }
+//   ).lean();
+
+//   if (!updatedCustomer) {
+//     throw new ApiError(404, "Customer not found");
+//   }
+
+//   res.status(200).json(
+//     new ApiResponse(
+//       200,
+//       updatedCustomer,
+//       "Customer updated successfully"
+//     )
+//   );
+// });
+export const updateCustomer = asyncHandler(async (req, res) => {
   const ownerId = getOwnerId(req.user);
   const { customerId } = req.params;
 
-  const { name, phone, email, address } = req.body;
-
-  // Build update object dynamically
+  // Build the update payload dynamically
   const updateFields = {};
 
-  if (name?.trim()) updateFields.name = name.trim();
-  if (phone) updateFields.phone = phone;
-  if (email) updateFields.email = email;
-  if (address) updateFields.address = address;
+  // 👥 Check if Name was sent
+  if (req.body.name !== undefined) {
+    if (!req.body.name.trim()) {
+      throw new ApiError(400, "Customer name cannot be empty spaces");
+    }
+    updateFields.name = req.body.name.trim();
+  }
 
-  // Update customer
+  // 📞 Check if Phone was sent (allows adding new number, updating, or clearing)
+  if (req.body.phone !== undefined) {
+    updateFields.phone = req.body.phone.trim();
+  }
+
+  // 📧 Check if Email was sent
+  if (req.body.email !== undefined) {
+    updateFields.email = req.body.email.trim();
+  }
+
+  // 🏠 Check if Address was sent (allows adding an address later, or clearing it completely)
+  if (req.body.address !== undefined) {
+    updateFields.address = req.body.address.trim();
+  }
+
+  // Update customer record in MongoDB
   const updatedCustomer = await Customer.findOneAndUpdate(
     {
       _id: customerId,
-      createdBy: ownerId,
+      createdBy: ownerId, // Ensures the right shop owner is updating their own customer
     },
     {
-      $set: updateFields,
+      $set: updateFields, // Saves only the fields that were changed or added
     },
     {
-      new: true,
+      new: true,          // Returns the fresh, newly updated data to the frontend
       runValidators: true,
     }
   ).lean();
@@ -378,14 +435,16 @@ export const updateCustomer = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Customer not found");
   }
 
+  // Send the clean updated customer profile back to your frontend
   res.status(200).json(
     new ApiResponse(
       200,
       updatedCustomer,
-      "Customer updated successfully"
+      "Customer details updated successfully"
     )
   );
 });
+
 // ✅ Delete customer
 export const deleteCustomer = asyncHandler(async (req, res) => {
   const ownerId = getOwnerId(req.user);
